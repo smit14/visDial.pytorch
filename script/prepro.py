@@ -190,7 +190,7 @@ if __name__ == "__main__":
     itow = {i+1:w for i,w in enumerate(vocab)} # a 1-indexed vocab translation table
     wtoi = {w:i+1 for i,w in enumerate(vocab)} # inverse table
 
-    print 'Encoding based on vocabulary...'
+    print('Encoding based on vocabulary...')
     ques_idx_train, ans_idx_train, cap_idx_train = encode_vocab(ques_tok_train, ans_tok_train, cap_tok_train, wtoi)
     ques_idx_val, ans_idx_val, cap_idx_val = encode_vocab(ques_tok_val, ans_tok_val, cap_tok_val, wtoi)
     
@@ -203,7 +203,7 @@ if __name__ == "__main__":
             opt_val, opt_list_val, opt_len_val, ans_index_val, image_list_val = \
                 create_mats(data_val, ques_idx_val, ans_idx_val, cap_idx_val, args)
 
-    print 'Saving hdf5...'
+    print('Saving hdf5...')
     f = h5py.File(args.output_h5, 'w')
     f.create_dataset('ques_train', dtype='uint32', data=ques_train)
     f.create_dataset('ques_len_train', dtype='uint32', data=ques_len_train)

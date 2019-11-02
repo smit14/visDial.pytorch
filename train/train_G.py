@@ -32,13 +32,13 @@ import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='data/visdial_data.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_json', default='data/visdial_params.json', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg_demo.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data_demo.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params_demo.json', help='path to dataset, now hdf5 file')
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
 parser.add_argument('--encoder', default='G_QIH_VGG', help='what encoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=0, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--start_epoch', type=int, default=0, help='start of epochs to train for')
@@ -137,11 +137,11 @@ critG = model.LMCriterion()
 sampler = model.gumbel_sampler()
 
 if opt.cuda:
-    netW.cuda()
-    netE.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda()
+    netW.cpu()
+    netE.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu()
 
 if opt.model_path != '':
     netW.load_state_dict(checkpoint['netW'])
@@ -169,7 +169,9 @@ def train(epoch):
 
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
+
 
         for rnd in range(10):
             ques = question[:,rnd,:].t()
@@ -314,11 +316,11 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    img_input, his_input = img_input.cuda(), his_input.cuda()
-    ques_input, ans_input = ques_input.cuda(), ans_input.cuda()
-    ans_target, ans_sample = ans_target.cuda(), ans_sample.cuda()
-    noise_input = noise_input.cuda()
-    gt_index = gt_index.cuda()
+    img_input, his_input = img_input.cpu(), his_input.cpu()
+    ques_input, ans_input = ques_input.cpu(), ans_input.cpu()
+    ans_target, ans_sample = ans_target.cpu(), ans_sample.cpu()
+    noise_input = noise_input.cpu()
+    gt_index = gt_index.cpu()
 
 ques_input = Variable(ques_input)
 ans_input = Variable(ans_input)

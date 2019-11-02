@@ -101,11 +101,11 @@ sampler = model.gumbel_sampler()
 
 
 if opt.cuda:
-    netW.cuda()
-    netE.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda()
+    netW.cpu()
+    netE.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu()
 
 if opt.model_path != '':
     netW.load_state_dict(checkpoint['netW_g'])
@@ -282,11 +282,11 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, ans_input = ques_input.cuda(), ans_input.cuda()
-    ans_target, ans_sample = ans_target.cuda(), ans_sample.cuda()
-    gt_index = gt_index.cuda()
-    noise_input = noise_input.cuda()
-    his_input,img_input = his_input.cuda(),img_input.cuda()
+    ques_input, ans_input = ques_input.cpu(), ans_input.cpu()
+    ans_target, ans_sample = ans_target.cpu(), ans_sample.cpu()
+    gt_index = gt_index.cpu()
+    noise_input = noise_input.cpu()
+    his_input,img_input = his_input.cpu(),img_input.cpu()
 
 ques_input = Variable(ques_input, volatile=True)
 ans_input = Variable(ans_input, volatile=True)

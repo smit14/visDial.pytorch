@@ -137,11 +137,11 @@ if True:# opt.model_path_D != '' and opt.model_path_G != '':
     netG.load_state_dict(checkpoint['netG'])
 
 if opt.cuda: # ship to cuda, if has GPU
-    netW_g.cuda()
-    netE_g.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda(), critLM.cuda()
+    netW_g.cpu()
+    netE_g.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu(), critLM.cpu()
 
 ####################################################################################
 # training model
@@ -285,20 +285,20 @@ gt_index = torch.LongTensor(opt.batchSize)
 opt_ans_target = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
-    ans_input, ans_target = ans_input.cuda(), ans_target.cuda()
-    wrong_ans_input = wrong_ans_input.cuda()
-    sample_ans_input = sample_ans_input.cuda()
+    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
+    ans_input, ans_target = ans_input.cpu(), ans_target.cpu()
+    wrong_ans_input = wrong_ans_input.cpu()
+    sample_ans_input = sample_ans_input.cpu()
 
-    fake_len = fake_len.cuda()
-    noise_input = noise_input.cuda()
-    batch_sample_idx = batch_sample_idx.cuda()
-    fake_diff_mask = fake_diff_mask.cuda()
-    fake_mask = fake_mask.cuda()
+    fake_len = fake_len.cpu()
+    noise_input = noise_input.cpu()
+    batch_sample_idx = batch_sample_idx.cpu()
+    fake_diff_mask = fake_diff_mask.cpu()
+    fake_mask = fake_mask.cpu()
 
-    opt_ans_input = opt_ans_input.cuda()
-    gt_index = gt_index.cuda()
-    opt_ans_target = opt_ans_target.cuda()
+    opt_ans_input = opt_ans_input.cpu()
+    gt_index = gt_index.cpu()
+    opt_ans_target = opt_ans_target.cpu()
 
 ques_input = Variable(ques_input)
 img_input = Variable(img_input)
