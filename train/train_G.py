@@ -29,6 +29,7 @@ import misc.model as model
 from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
+from misc.utils import repackage_hidden_new
 
 parser = argparse.ArgumentParser()
 
@@ -38,7 +39,7 @@ parser.add_argument('--input_json', default='../script/data/visdial_params_demo.
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
 parser.add_argument('--encoder', default='G_QIH_VGG', help='what encoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=0, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=20, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--start_epoch', type=int, default=0, help='start of epochs to train for')
@@ -66,7 +67,7 @@ parser.add_argument('--mos', action='store_true', help='whether to use Mixture o
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 
-parser.add_argument('--log_interval', type=int, default=50, help='how many iterations show the log info')
+parser.add_argument('--log_interval', type=int, default=1, help='how many iterations show the log info')
 
 opt = parser.parse_args()
 print(opt)
@@ -178,16 +179,23 @@ def train(epoch):
             his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
             ans, tans = answer[:,rnd,:].t(), answerT[:,rnd,:].t()
 
-            his_input.data.resize_(his.size()).copy_(his)
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            ans_input.data.resize_(ans.size()).copy_(ans)
-            ans_target.data.resize_(tans.size()).copy_(tans)
+            his_input = torch.LongTensor(his.size())
+            his_input.copy_(his)
+
+            ques_input = torch.LongTensor(ques.size())
+            ques_input.copy_(ques)
+
+            ans_input = torch.LongTensor(ans.size())
+            ans_input.copy_(ans)
+
+            ans_target = torch.LongTensor(tans.size())
+            ans_target.copy_(tans)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             encoder_feat, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                 ques_hidden, hist_hidden, rnd+1)
@@ -199,7 +207,7 @@ def train(epoch):
             loss = critG(logprob, ans_target.view(-1, 1))
 
             loss = loss / torch.sum(ans_target.data.gt(0))
-            average_loss += loss.data[0]
+            average_loss += loss.data.item()
             # do backward.
             netW.zero_grad()
             netE.zero_grad()
@@ -239,7 +247,9 @@ def val():
 
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)
-        img_input.data.resize_(image.size()).copy_(image)
+
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
 
         for rnd in range(10):
             # get the corresponding round QA and history.
@@ -248,18 +258,31 @@ def val():
             ans = opt_answer[:,rnd,:,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            his_input.data.resize_(his.size()).copy_(his)
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            ans_input.data.resize_(ans.size()).copy_(ans)
-            ans_target.data.resize_(tans.size()).copy_(tans)
+            # his_input.data.resize_(his.size()).copy_(his)
+            # ques_input.data.resize_(ques.size()).copy_(ques)
+            # ans_input.data.resize_(ans.size()).copy_(ans)
+            # ans_target.data.resize_(tans.size()).copy_(tans)
 
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            his_input = torch.LongTensor(his.size())
+            his_input.copy_(his)
+
+            ques_input = torch.LongTensor(ques.size())
+            ques_input.copy_(ques)
+
+            ans_input = torch.LongTensor(ans.size())
+            ans_input.copy_(ans)
+
+            ans_target = torch.LongTensor(tans.size())
+            ans_target.copy_(tans)
+
+            gt_index = torch.LongTensor(gt_id.size())
+            gt_index.copy_(gt_id)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             encoder_feat, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                 ques_hidden, hist_hidden, rnd+1)
