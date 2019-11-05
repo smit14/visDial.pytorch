@@ -123,12 +123,12 @@ dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=5,
 # Build the Model
 ####################################################################################
 
-vocab_size = dataset.vocab_size
-ques_length = dataset.ques_length
-ans_length = dataset.ans_length + 1
-his_length = dataset.ques_length + dataset.ans_length
-itow = dataset.itow
-img_feat_size = opt.conv_feat_size
+vocab_size = dataset.vocab_size # Current value 8964
+ques_length = dataset.ques_length # 16
+ans_length = dataset.ans_length + 1 # 9
+his_length = dataset.ques_length + dataset.ans_length #24
+itow = dataset.itow #index to word
+img_feat_size = opt.conv_feat_size #512
 
 netE = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 
@@ -331,8 +331,8 @@ img_input = torch.FloatTensor(opt.batchSize, 49, 512)
 ques_input = torch.LongTensor(ques_length, opt.batchSize)
 his_input = torch.LongTensor(his_length, opt.batchSize)
 
-ans_input = torch.LongTensor(ans_length, opt.batchSize)
-ans_target = torch.LongTensor(ans_length, opt.batchSize)
+ans_vocab_first_input = torch.LongTensor(ans_length, opt.batchSize)
+ans_vocab_last_input = torch.LongTensor(ans_length, opt.batchSize)
 
 ans_sample = torch.LongTensor(1, opt.batchSize)
 noise_input = torch.FloatTensor(opt.batchSize)
@@ -340,14 +340,14 @@ gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
     img_input, his_input = img_input.cpu(), his_input.cpu()
-    ques_input, ans_input = ques_input.cpu(), ans_input.cpu()
-    ans_target, ans_sample = ans_target.cpu(), ans_sample.cpu()
+    ques_input, ans_vocab_first_input = ques_input.cpu(), ans_vocab_first_input.cpu()
+    ans_vocab_last_input, ans_sample = ans_vocab_last_input.cpu(), ans_sample.cpu()
     noise_input = noise_input.cpu()
     gt_index = gt_index.cpu()
 
 ques_input = Variable(ques_input)
-ans_input = Variable(ans_input)
-ans_target = Variable(ans_target)
+ans_vocab_first_input = Variable(ans_vocab_first_input)
+ans_vocab_last_input = Variable(ans_vocab_last_input)
 ans_sample = Variable(ans_sample)
 noise_input = Variable(noise_input)
 img_input = Variable(img_input)
