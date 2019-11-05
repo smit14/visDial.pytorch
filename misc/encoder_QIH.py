@@ -16,7 +16,6 @@ class _netE(nn.Module):
         self.rnn_type = rnn_type
         self.nhid = nhid
         self.nlayers = nlayers
-        self.nhid = nhid
         self.ninp = ninp
         self.img_embed = nn.Linear(img_feat_size, nhid)
 
