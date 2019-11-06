@@ -27,7 +27,7 @@ import torchvision.utils as vutils
 from torch.autograd import Variable
 
 
-from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
+from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
                     decode_txt, sample_batch_neg, l2_norm
 
 import misc.dataLoader as dl
@@ -37,13 +37,13 @@ import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='data/vdl_img_vgg.h5', help='path to image feature, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='data/visdial_data.h5', help='path to label, now hdf5 file')
-parser.add_argument('--input_json', default='data/visdial_params.json', help='path to dataset, now json file')
+parser.add_argument('--input_img_h5', default='../data/vdl_img_vgg_demo.h5', help='path to image feature, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../data/visdial_data_demo.h5', help='path to label, now hdf5 file')
+parser.add_argument('--input_json', default='../data/visdial_params_demo.json', help='path to dataset, now json file')
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=100, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
@@ -71,7 +71,7 @@ parser.add_argument('--nlayers', type=int, default=1, help='number of layers')
 parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
-parser.add_argument('--log_interval', type=int, default=50, help='how many iterations show the log info')
+parser.add_argument('--log_interval', type=int, default=1, help='how many iterations show the log info')
 
 opt = parser.parse_args()
 print(opt)
@@ -115,7 +115,7 @@ dataset = dl.train(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h
 
 dataset_val = dl.validate(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
                 input_json=opt.input_json, negative_sample = opt.negative_sample,
-                num_val = opt.num_val, data_split = 'test')
+                num_val = opt.num_val, data_split = 'val')
 
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                          shuffle=True, num_workers=int(opt.workers))
@@ -179,7 +179,9 @@ def train(epoch):
 
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)
-        img_input.data.resize_(image.size()).copy_(image)
+
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
 
         for rnd in range(10):
             netW.zero_grad()
@@ -196,22 +198,30 @@ def train(epoch):
             real_len = answerLen[:,rnd]
             wrong_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
+            ques_input = torch.LongTensor(ques.size())
+            ques_input.copy_(ques)
 
-            ans_input.data.resize_(ans.size()).copy_(ans)
-            ans_target.data.resize_(tans.size()).copy_(tans)
-            wrong_ans_input.data.resize_(wrong_ans.size()).copy_(wrong_ans)
+            his_input = torch.LongTensor(his.size())
+            his_input.copy_(his)
+
+            ans_input = torch.LongTensor(ans.size())
+            ans_input.copy_(ans)
+
+            ans_target = torch.LongTensor(tans.size())
+            ans_target.copy_(tans)
+
+            wrong_ans_input = torch.LongTensor(wrong_ans.size())
+            wrong_ans_input.copy_(wrong_ans)
 
             # sample in-batch negative index
-            batch_sample_idx.data.resize_(batch_size, opt.neg_batch_sample).zero_()
+            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long)
             sample_batch_neg(answerIdx[:,rnd], opt_answerIdx[:,rnd,:], batch_sample_idx, opt.neg_batch_sample)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             featD, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                 ques_hidden, hist_hidden, rnd+1)
@@ -219,8 +229,8 @@ def train(epoch):
             ans_real_emb = netW(ans_target, format='index')
             ans_wrong_emb = netW(wrong_ans_input, format='index')
 
-            real_hidden = repackage_hidden(real_hidden, batch_size)
-            wrong_hidden = repackage_hidden(wrong_hidden, ans_wrong_emb.size(1))
+            real_hidden = repackage_hidden_new(real_hidden, batch_size)
+            wrong_hidden = repackage_hidden_new(wrong_hidden, ans_wrong_emb.size(1))
 
             real_feat = netD(ans_real_emb, ans_target, real_hidden, vocab_size)
             wrong_feat = netD(ans_wrong_emb, wrong_ans_input, wrong_hidden, vocab_size)
@@ -231,7 +241,7 @@ def train(epoch):
 
             nPairLoss = critD(featD, real_feat, wrong_feat, batch_wrong_feat)
 
-            average_loss += nPairLoss.data[0]
+            average_loss += nPairLoss.data.item()
             nPairLoss.backward()
             optimizer.step()
             count += 1
@@ -244,10 +254,12 @@ def train(epoch):
             average_loss = 0
             count = 0
 
-    return average_loss
+    return average_loss, lr
 
 
 def val():
+    # ques_hidden = netE.init_hidden(opt.batchSize)
+
     netE.eval()
     netW.eval()
     netD.eval()
@@ -255,6 +267,7 @@ def val():
     n_neg = 100
     data_iter_val = iter(dataloader_val)
     ques_hidden = netE.init_hidden(opt.batchSize)
+    print('DSuccess')
     hist_hidden = netE.init_hidden(opt.batchSize)
 
     opt_hidden = netD.init_hidden(opt.batchSize)
@@ -271,7 +284,8 @@ def val():
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)
         #image = l2_norm(image)
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
 
         for rnd in range(10):
             # get the corresponding round QA and history.
@@ -281,24 +295,31 @@ def val():
             opt_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
+            ques_input = torch.LongTensor(ques.size())
+            ques_input.copy_(ques)
 
-            opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            his_input = torch.LongTensor(his.size())
+            his_input.copy_(his)
+
+            opt_ans_input = torch.LongTensor(opt_ans.size())
+            opt_ans_input.copy_(opt_ans)
+
+            gt_index = torch.LongTensor(gt_id.size())
+            gt_index.copy_(gt_id)
+
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             featD, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                 ques_hidden, hist_hidden, rnd+1)
 
             opt_ans_emb = netW(opt_ans_input, format = 'index')
-            opt_hidden = repackage_hidden(opt_hidden, opt_ans_input.size(1))
+            opt_hidden = repackage_hidden_new(opt_hidden, opt_ans_input.size(1))
             opt_feat = netD(opt_ans_emb, opt_ans_input, opt_hidden, vocab_size)
             opt_feat = opt_feat.view(batch_size, -1, opt.ninp)
 
