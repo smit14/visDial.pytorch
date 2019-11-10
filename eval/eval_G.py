@@ -101,11 +101,11 @@ sampler = model.gumbel_sampler()
 
 
 if opt.cuda:
-    netW.cpu()
-    netE.cpu()
-    netG.cpu()
-    critG.cpu()
-    sampler.cpu()
+    netW.cuda()
+    netE.cuda()
+    netG.cuda()
+    critG.cuda()
+    sampler.cuda()
 
 if opt.model_path != '':
     netW.load_state_dict(checkpoint['netW'])
@@ -192,7 +192,7 @@ def eval():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
 
         i += 1
         sys.stdout.write('Evaluating: {:d}/{:d}  \r' \
@@ -282,11 +282,11 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, ans_input = ques_input.cpu(), ans_input.cpu()
-    ans_target, ans_sample = ans_target.cpu(), ans_sample.cpu()
-    gt_index = gt_index.cpu()
-    noise_input = noise_input.cpu()
-    his_input,img_input = his_input.cpu(),img_input.cpu()
+    ques_input, ans_input = ques_input.cuda(), ans_input.cuda()
+    ans_target, ans_sample = ans_target.cuda(), ans_sample.cuda()
+    gt_index = gt_index.cuda()
+    noise_input = noise_input.cuda()
+    his_input,img_input = his_input.cuda(),img_input.cuda()
 
 ques_input = Variable(ques_input, volatile=True)
 ans_input = Variable(ans_input, volatile=True)

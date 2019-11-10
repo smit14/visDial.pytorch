@@ -10,8 +10,8 @@ from misc.share_Linear import share_Linear
 class _netW(nn.Module):
     def __init__(self, ntoken, ninp, dropout):
         super(_netW, self).__init__()
-        self.word_embed = nn.Embedding(ntoken+1, ninp).cpu()
-        self.Linear = share_Linear(self.word_embed.weight).cpu()
+        self.word_embed = nn.Embedding(ntoken+1, ninp).cuda()
+        self.Linear = share_Linear(self.word_embed.weight).cuda()
         self.init_weights()
         self.d = dropout
 

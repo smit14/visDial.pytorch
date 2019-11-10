@@ -138,11 +138,11 @@ critG = model.LMCriterion()
 sampler = model.gumbel_sampler()
 
 if opt.cuda:
-    netW.cpu()
-    netE.cpu()
-    netG.cpu()
-    critG.cpu()
-    sampler.cpu()
+    netW.cuda()
+    netE.cuda()
+    netG.cuda()
+    critG.cuda()
+    sampler.cuda()
 
 if opt.model_path != '':
     netW.load_state_dict(checkpoint['netW'])
@@ -316,7 +316,7 @@ def val():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
 
         i += 1
 
@@ -339,11 +339,11 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    img_input, his_input = img_input.cpu(), his_input.cpu()
-    ques_input, ans_vocab_first_input = ques_input.cpu(), ans_vocab_first_input.cpu()
-    ans_vocab_last_input, ans_sample = ans_vocab_last_input.cpu(), ans_sample.cpu()
-    noise_input = noise_input.cpu()
-    gt_index = gt_index.cpu()
+    img_input, his_input = img_input.cuda(), his_input.cuda()
+    ques_input, ans_vocab_first_input = ques_input.cuda(), ans_vocab_first_input.cuda()
+    ans_vocab_last_input, ans_sample = ans_vocab_last_input.cuda(), ans_sample.cuda()
+    noise_input = noise_input.cuda()
+    gt_index = gt_index.cuda()
 
 ques_input = Variable(ques_input)
 ans_vocab_first_input = Variable(ans_vocab_first_input)

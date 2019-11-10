@@ -111,12 +111,12 @@ if  opt.model_path_G != '':
 
 
 if opt.cuda: # ship to cuda, if has GPU
-    netW_g.cpu()
-    netE_g.cpu()
-    netG.cpu()
-    critG.cpu()
-    sampler.cpu()
-    critLM.cpu()
+    netW_g.cuda()
+    netE_g.cuda()
+    netG.cuda()
+    critG.cuda()
+    sampler.cuda()
+    critLM.cuda()
 
 ####################################################################################
 # training model
@@ -210,7 +210,7 @@ def val():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_G += list(rank.view(-1).data.cpu().numpy())
+            rank_G += list(rank.view(-1).data.cuda().numpy())
 
             opt_ans_emb = netW_d(opt_ans_target, format = 'index')
             opt_hidden = repackage_hidden(opt_hidden, opt_ans_target.size(1))
@@ -226,7 +226,7 @@ def val():
             sort_score, sort_idx = torch.sort(score, 1, descending=True)
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_D += list(rank.view(-1).data.cpu().numpy())
+            rank_D += list(rank.view(-1).data.cuda().numpy())
         i += 1
 
         if i % 50 == 0:
@@ -269,20 +269,20 @@ gt_index = torch.LongTensor(opt.batchSize)
 opt_ans_target = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
-    ans_input, ans_target = ans_input.cpu(), ans_target.cpu()
-    wrong_ans_input = wrong_ans_input.cpu()
-    sample_ans_input = sample_ans_input.cpu()
+    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
+    ans_input, ans_target = ans_input.cuda(), ans_target.cuda()
+    wrong_ans_input = wrong_ans_input.cuda()
+    sample_ans_input = sample_ans_input.cuda()
 
-    fake_len = fake_len.cpu()
-    noise_input = noise_input.cpu()
-    batch_sample_idx = batch_sample_idx.cpu()
-    fake_diff_mask = fake_diff_mask.cpu()
-    fake_mask = fake_mask.cpu()
+    fake_len = fake_len.cuda()
+    noise_input = noise_input.cuda()
+    batch_sample_idx = batch_sample_idx.cuda()
+    fake_diff_mask = fake_diff_mask.cuda()
+    fake_mask = fake_mask.cuda()
 
-    opt_ans_input = opt_ans_input.cpu()
-    gt_index = gt_index.cpu()
-    opt_ans_target = opt_ans_target.cpu()
+    opt_ans_input = opt_ans_input.cuda()
+    gt_index = gt_index.cuda()
+    opt_ans_target = opt_ans_target.cuda()
 
 ques_input = Variable(ques_input)
 img_input = Variable(img_input)

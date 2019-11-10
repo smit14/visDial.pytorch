@@ -104,8 +104,8 @@ if opt.model_path != '': # load the pre-trained model.
     print('Loading model Success!')
 
 if opt.cuda: # ship to cuda, if has GPU
-    netW.cpu(), netE.cpu(), netD.cpu()
-    critD.cpu()
+    netW.cuda(), netE.cuda(), netD.cuda()
+    critD.cuda()
 
 n_neg = 100
 ####################################################################################
@@ -183,7 +183,7 @@ def eval():
 
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
 
         i += 1
 
@@ -225,15 +225,15 @@ gt_index = torch.LongTensor(opt.batchSize)
 
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
-    opt_ans_input = opt_ans_input.cpu()
-    fake_ans_input, sample_ans_input = fake_ans_input.cpu(), sample_ans_input.cpu()
-    opt_index, fake_index =  opt_index.cpu(), fake_index.cpu()
+    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
+    opt_ans_input = opt_ans_input.cuda()
+    fake_ans_input, sample_ans_input = fake_ans_input.cuda(), sample_ans_input.cuda()
+    opt_index, fake_index =  opt_index.cuda(), fake_index.cuda()
 
-    fake_len = fake_len.cpu()
-    noise_input = noise_input.cpu()
-    batch_sample_idx = batch_sample_idx.cpu()
-    gt_index = gt_index.cpu()
+    fake_len = fake_len.cuda()
+    noise_input = noise_input.cuda()
+    batch_sample_idx = batch_sample_idx.cuda()
+    gt_index = gt_index.cuda()
 
 
 ques_input = Variable(ques_input)
