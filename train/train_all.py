@@ -95,6 +95,8 @@ cudnn.benchmark = True
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
+model_path = opt.model_path
+
 if opt.model_path!='':
     checkpoint = torch.load(opt.model_path)
     opt = checkpoint['opt']
@@ -153,24 +155,17 @@ netW_d = model._netW(vocab_size, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
 critD =model.nPairLoss(opt.ninp, opt.margin)
 
-if opt.model_path !='':
+if model_path !='':
     print('Loading Discriminator model...')
     netW_d.load_state_dict(checkpoint['netW_d'])
     netE_d.load_state_dict(checkpoint['netE_d'])
     netD.load_state_dict(checkpoint['netD'])
 
-# elif opt.model_path_D != '':
-#     print('Loading Discriminator model...')
-#     netW_d.load_state_dict(checkpoint_D['netW'])
-#     netE_d.load_state_dict(checkpoint_D['netE'])
-#     netD.load_state_dict(checkpoint_D['netD'])
-
-else:
+elif opt.model_path_D != '':
     print('Loading Discriminator model...')
     netW_d.load_state_dict(checkpoint_D['netW'])
     netE_d.load_state_dict(checkpoint_D['netE'])
     netD.load_state_dict(checkpoint_D['netD'])
-
 
 print('init Generative model...')
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
@@ -180,23 +175,17 @@ sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
 
-if  opt.model_path != '':
+if model_path != '':
     print('Loading Generative model...')
     netW_g.load_state_dict(checkpoint['netW_g'])
     netE_g.load_state_dict(checkpoint['netE_g'])
     netG.load_state_dict(checkpoint['netG'])
 
-# elif  opt.model_path_G != '':
-#     print('Loading Generative model...')
-#     netW_g.load_state_dict(checkpoint_G['netW'])
-#     netE_g.load_state_dict(checkpoint_G['netE'])
-#     netG.load_state_dict(checkpoint_G['netG'])
-else:
+elif  opt.model_path_G != '':
     print('Loading Generative model...')
     netW_g.load_state_dict(checkpoint_G['netW'])
     netE_g.load_state_dict(checkpoint_G['netE'])
     netG.load_state_dict(checkpoint_G['netG'])
-
 
 if opt.cuda: # ship to cuda, if has GPU
     netW_d.cuda(), netW_g.cuda()
