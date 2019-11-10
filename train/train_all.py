@@ -3,7 +3,7 @@ import argparse
 import os
 import random
 import sys
-sys.path.append(1, '/home/hitarth/gpu/visDial.pytorch')
+sys.path.insert(1, '/home/hitarth/gpu/visDial.pytorch')
 
 import pdb
 import time
