@@ -159,11 +159,18 @@ if opt.model_path !='':
     netE_d.load_state_dict(checkpoint['netE_d'])
     netD.load_state_dict(checkpoint['netD'])
 
-elif opt.model_path_D != '':
+# elif opt.model_path_D != '':
+#     print('Loading Discriminator model...')
+#     netW_d.load_state_dict(checkpoint_D['netW'])
+#     netE_d.load_state_dict(checkpoint_D['netE'])
+#     netD.load_state_dict(checkpoint_D['netD'])
+
+else:
     print('Loading Discriminator model...')
     netW_d.load_state_dict(checkpoint_D['netW'])
     netE_d.load_state_dict(checkpoint_D['netE'])
     netD.load_state_dict(checkpoint_D['netD'])
+
 
 print('init Generative model...')
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
@@ -179,7 +186,12 @@ if  opt.model_path != '':
     netE_g.load_state_dict(checkpoint['netE_g'])
     netG.load_state_dict(checkpoint['netG'])
 
-elif  opt.model_path_G != '':
+# elif  opt.model_path_G != '':
+#     print('Loading Generative model...')
+#     netW_g.load_state_dict(checkpoint_G['netW'])
+#     netE_g.load_state_dict(checkpoint_G['netE'])
+#     netG.load_state_dict(checkpoint_G['netG'])
+else:
     print('Loading Generative model...')
     netW_g.load_state_dict(checkpoint_G['netW'])
     netE_g.load_state_dict(checkpoint_G['netE'])
