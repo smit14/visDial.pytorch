@@ -24,7 +24,7 @@ def repackage_hidden(h, batch_size):
 def repackage_hidden_new(h, batch_size):
     """Wraps hidden states in new Variables, to detach them from their history."""
     if type(h) == torch.Tensor:
-        tnsr = torch.zeros([h.size(0), batch_size, h.size(2)])
+        tnsr = torch.zeros([h.size(0), batch_size, h.size(2)]).cuda()
         return tnsr
     else:
         return tuple(repackage_hidden_new(v, batch_size) for v in h)
