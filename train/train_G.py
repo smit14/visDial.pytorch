@@ -179,16 +179,16 @@ def train(epoch):
             his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
             ans, tans = answer[:,rnd,:].t(), answerT[:,rnd,:].t()
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            ans_input = torch.LongTensor(ans.size())
+            ans_input = torch.LongTensor(ans.size()).cuda()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size())
+            ans_target = torch.LongTensor(tans.size()).cuda()
             ans_target.copy_(tans)
 
             ques_emb = netW(ques_input, format = 'index')
@@ -263,19 +263,19 @@ def val():
             # ans_input.data.resize_(ans.size()).copy_(ans)
             # ans_target.data.resize_(tans.size()).copy_(tans)
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            ans_input = torch.LongTensor(ans.size())
+            ans_input = torch.LongTensor(ans.size()).cuda()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size())
+            ans_target = torch.LongTensor(tans.size()).cuda()
             ans_target.copy_(tans)
 
-            gt_index = torch.LongTensor(gt_id.size())
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
             gt_index.copy_(gt_id)
 
             ques_emb = netW(ques_input, format = 'index')
