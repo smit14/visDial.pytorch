@@ -92,10 +92,12 @@ if opt.model_path != '':
     opt.model_path = model_path
     opt.batchSize = 128
     opt.niter = 100
+    save_path = opt.save_path
 else:
     t = datetime.datetime.now()
     cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
     save_path = os.path.join(opt.outf, opt.encoder + '.' + cur_time)
+    opt.save_path = save_path
     try:
         os.makedirs(save_path)
     except OSError:
