@@ -316,7 +316,7 @@ def val():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
 
         i += 1
 
