@@ -98,6 +98,7 @@ if torch.cuda.is_available() and not opt.cuda:
 if opt.model_path!='':
     checkpoint = torch.load(opt.model_path)
     opt = checkpoint['opt']
+    opt.start_epoch = checkpoint['epoch']
     save_path = opt.save_path
 else:
     # create new folder.
