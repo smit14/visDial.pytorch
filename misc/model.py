@@ -200,7 +200,7 @@ class G_loss(nn.Module):
         loss_norm = feat.norm() + fake.norm() + right.norm()
         loss = (loss_fake + 0.1 * loss_norm) / batch_size
 
-        return loss, loss_fake.data[0]/batch_size
+        return loss, loss_fake.data.item()/batch_size
 
 
 class gumbel_sampler(nn.Module):
