@@ -292,8 +292,8 @@ def train(epoch):
 
                 lm_loss.backward()
                 optimizerLM.step()
-                err_lm += lm_loss.data[0]
-                err_lm_tmp += lm_loss.data[0]
+                err_lm += lm_loss.data.item()
+                err_lm_tmp += lm_loss.data.item()
 
             # sample the answer using gumble softmax sampler.
             ques_emb_g = netW_g(ques_input, format = 'index')
@@ -382,8 +382,8 @@ def train(epoch):
             d_g_loss.backward()
             optimizerG.step()
 
-            err_g += d_g_loss.data[0]
-            err_g_tmp += d_g_loss.data[0]
+            err_g += d_g_loss.data.item()
+            err_g_tmp += d_g_loss.data.item()
             err_g_fake_tmp += g_fake
 
             count += 1
