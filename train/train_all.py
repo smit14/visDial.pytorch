@@ -77,6 +77,7 @@ parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--gumble_weight', type=int, default=0.5, help='folder to output images and model checkpoints')
+parser.add_argument('--log_interval', type=int, default=1, help='how many iterations show the log info')
 
 opt = parser.parse_args()
 
@@ -392,7 +393,7 @@ def train(epoch):
         loss_store.append({'iter':i, 'err_lm':err_lm_tmp/10, 'err_d':err_d_tmp/10, 'err_g':err_g_tmp/10, \
                             'd_fake': err_d_fake_tmp/10, 'g_fake':err_g_fake_tmp/10})
 
-        if i % 20 == 0:
+        if i % opt.log_interval == 0:
             print ('Epoch:%d %d/%d, err_lm %4f, err_d %4f, err_g %4f, d_fake %4f, g_fake %4f' \
                 % (epoch, i, len(dataloader), err_lm_tmp/10, err_d_tmp/10, err_g_tmp/10, err_d_fake_tmp/10, \
                     err_g_fake_tmp/10))
@@ -437,7 +438,9 @@ def val():
         batch_size = question.size(0)
         image = image.view(-1, 512)
 
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
+
         for rnd in range(10):
 
             # get the corresponding round QA and history.
