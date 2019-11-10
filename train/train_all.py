@@ -521,7 +521,7 @@ def val():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_G += list(rank.view(-1).data.cuda().numpy())
+            rank_G += list(rank.view(-1).data.cpu().numpy())
 
             opt_ans_emb = netW_d(opt_ans_target, format = 'index')
             opt_hidden = repackage_hidden_new(opt_hidden, opt_ans_target.size(1))
@@ -537,7 +537,7 @@ def val():
             sort_score, sort_idx = torch.sort(score, 1, descending=True)
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_D += list(rank.view(-1).data.cuda().numpy())
+            rank_D += list(rank.view(-1).data.cpu().numpy())
 
         i += 1
 
