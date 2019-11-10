@@ -22,7 +22,7 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
+from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
                     decode_txt, sample_batch_neg, l2_norm
 import misc.dataLoader as dl
 import misc.model as model
@@ -41,6 +41,7 @@ parser.add_argument('--num_val', default=1000, help='number of image split out a
 parser.add_argument('--update_D', action='store_true', help='whether train use the GAN loss.')
 parser.add_argument('--update_LM', action='store_true', help='whether train use the GAN loss.')
 
+parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--model_path_D', default='save/HCIAE-D-MLE.pth', help='folder to output images and model checkpoints')
 parser.add_argument('--model_path_G', default='save/HCIAE-G-MLE.pth', help='folder to output images and model checkpoints')
 
@@ -92,23 +93,28 @@ cudnn.benchmark = True
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-# create new folder.
-t = datetime.datetime.now()
-cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
-save_path = os.path.join(opt.outf, opt.encoder + '.' + cur_time)
-opt.save_path = save_path
-try:
-    os.makedirs(save_path)
-except OSError:
-    pass
+if opt.model_path!='':
+    checkpoint = torch.load(opt.model_path)
+    opt = checkpoint['opt']
+    save_path = opt.save_path
+else:
+    # create new folder.
+    t = datetime.datetime.now()
+    cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
+    save_path = os.path.join(opt.outf, opt.encoder + '.' + cur_time)
+    opt.save_path = save_path
+    try:
+        os.makedirs(save_path)
+    except OSError:
+        pass
 
-if opt.model_path_D != '' :
-    print("=> loading checkpoint '{}'".format(opt.model_path_D))
-    checkpoint_D = torch.load(opt.model_path_D)
+    if opt.model_path_D != '' :
+        print("=> loading checkpoint '{}'".format(opt.model_path_D))
+        checkpoint_D = torch.load(opt.model_path_D)
 
-if opt.model_path_G != '':
-    print("=> loading checkpoint '{}'".format(opt.model_path_G))
-    checkpoint_G = torch.load(opt.model_path_G)
+    if opt.model_path_G != '':
+        print("=> loading checkpoint '{}'".format(opt.model_path_G))
+        checkpoint_G = torch.load(opt.model_path_G)
 
 ####################################################################################
 # Data Loader
@@ -144,7 +150,13 @@ netW_d = model._netW(vocab_size, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
 critD =model.nPairLoss(opt.ninp, opt.margin)
 
-if opt.model_path_D != '' :
+if opt.model_path !='':
+    print('Loading Discriminator model...')
+    netW_d.load_state_dict(checkpoint['netW_d'])
+    netE_d.load_state_dict(checkpoint['netE_d'])
+    netD.load_state_dict(checkpoint['netD'])
+
+elif opt.model_path_D != '':
     print('Loading Discriminator model...')
     netW_d.load_state_dict(checkpoint_D['netW'])
     netE_d.load_state_dict(checkpoint_D['netE'])
@@ -158,8 +170,13 @@ sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
 
+if  opt.model_path != '':
+    print('Loading Generative model...')
+    netW_g.load_state_dict(checkpoint['netW_g'])
+    netE_g.load_state_dict(checkpoint['netE_g'])
+    netG.load_state_dict(checkpoint['netG'])
 
-if  opt.model_path_G != '':
+elif  opt.model_path_G != '':
     print('Loading Generative model...')
     netW_g.load_state_dict(checkpoint_G['netW'])
     netE_g.load_state_dict(checkpoint_G['netE'])
@@ -210,7 +227,8 @@ def train(epoch):
                                     opt_answerT, opt_answerLen, opt_answerIdx = data
         batch_size = question.size(0)
         image = image.view(-1, 512)
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
 
         err_d_tmp = 0
         err_g_tmp = 0
@@ -229,14 +247,22 @@ def train(epoch):
             real_len = answerLen[:,rnd].long()
             wrong_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
 
-            ans_input.data.resize_(ans.size()).copy_(ans)
-            ans_target.data.resize_(tans.size()).copy_(tans)
-            wrong_ans_input.data.resize_(wrong_ans.size()).copy_(wrong_ans)
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
 
-            batch_sample_idx.data.resize_(batch_size, opt.neg_batch_sample).zero_()
+            ans_input = torch.LongTensor(ans.size()).cuda()
+            ans_input.copy_(ans)
+
+            ans_target = torch.LongTensor(tans.size()).cuda()
+            ans_target.copy_(tans)
+
+            wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
+            wrong_ans_input.copy_(wrong_ans)
+
+            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
             sample_batch_neg(answerIdx[:,rnd], opt_answerIdx[:,rnd,:], batch_sample_idx, opt.neg_batch_sample)
 
             # -----------------------------------------
@@ -246,8 +272,8 @@ def train(epoch):
                 ques_emb_g = netW_g(ques_input, format = 'index')
                 his_emb_g = netW_g(his_input, format = 'index')
 
-                ques_hidden1 = repackage_hidden(ques_hidden1, batch_size)
-                hist_hidden1 = repackage_hidden(hist_hidden1, his_emb_g.size(1))
+                ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
+                hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
 
                 featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
                                                     ques_hidden1, hist_hidden1, rnd+1)
@@ -272,8 +298,8 @@ def train(epoch):
             ques_emb_g = netW_g(ques_input, format = 'index')
             his_emb_g = netW_g(his_input, format = 'index')
 
-            ques_hidden1 = repackage_hidden(ques_hidden1, batch_size)
-            hist_hidden1 = repackage_hidden(hist_hidden1, his_emb_g.size(1))
+            ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
+            hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
 
             featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
                                                 ques_hidden1, hist_hidden1, rnd+1)
@@ -283,7 +309,8 @@ def train(epoch):
             # Gumble softmax to sample the output.
             fake_onehot = []
             fake_idx = []
-            noise_input.data.resize_(ans_length, batch_size, vocab_size+1)
+
+            noise_input = torch.FloatTensor(ans_length, batch_size, vocab_size+1).cuda()
             noise_input.data.uniform_(0,1)
 
             ans_sample = ans_input[0]
@@ -305,7 +332,10 @@ def train(epoch):
                 fake_len.masked_fill_(fake_idx.data[di].eq(vocab_size), di)
 
             # generate fake mask.
-            fake_mask.data.resize_(fake_idx.size()).fill_(1)
+            #----------------------------------------------------------------------------
+            fake_mask = torch.ByteTensor(fake_idx.size()).cuda()
+            fake_mask.resize_(fake_idx.size()).fill_(1)
+            #----------------------------------------------------------------------------
             # get the real, wrong and fake index.
             for b in range(batch_size):
                 fake_mask.data[:fake_len[b]+1, b] = 0
@@ -324,8 +354,8 @@ def train(epoch):
             ques_emb_d = netW_d(ques_input, format = 'index')
             his_emb_d = netW_d(his_input, format = 'index')
 
-            ques_hidden2 = repackage_hidden(ques_hidden2, batch_size)
-            hist_hidden2 = repackage_hidden(hist_hidden2, his_emb_d.size(1))
+            ques_hidden2 = repackage_hidden_new(ques_hidden2, batch_size)
+            hist_hidden2 = repackage_hidden_new(hist_hidden2, his_emb_d.size(1))
 
             featD, _ = netE_d(ques_emb_d, his_emb_d, img_input, \
                                         ques_hidden2, hist_hidden2, rnd+1)
@@ -335,9 +365,9 @@ def train(epoch):
             ans_fake_emb = netW_d(fake_onehot, format='onehot')
             ans_fake_emb = ans_fake_emb.view(ans_length, -1, opt.ninp)
 
-            real_hidden = repackage_hidden(real_hidden, batch_size)
-            #wrong_hidden = repackage_hidden(wrong_hidden, ans_wrong_emb.size(1))
-            fake_hidden = repackage_hidden(fake_hidden, batch_size)
+            real_hidden = repackage_hidden_new(real_hidden, batch_size)
+            #wrong_hidden = repackage_hidden_new(wrong_hidden, ans_wrong_emb.size(1))
+            fake_hidden = repackage_hidden_new(fake_hidden, batch_size)
 
             fake_feat = netD(ans_fake_emb, fake_idx, fake_hidden, vocab_size)
             real_feat = netD(ans_real_emb, ans_target, real_hidden, vocab_size)
@@ -418,11 +448,25 @@ def val():
             gt_id = answer_ids[:,rnd]
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
-            opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
-            opt_ans_target.data.resize_(opt_tans.size()).copy_(opt_tans)
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            #-----------------------------------------------------------------
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
+
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
+
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input.copy_(opt_ans)
+
+            opt_ans_target = torch.LongTensor(opt_tans.size()).cuda()
+            opt_ans_target.copy_(opt_tans)
+
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index.copy_(gt_id)
+
+
+
+            #-----------------------------------------------------------------------
 
             ques_emb_g = netW_g(ques_input, format = 'index')
             his_emb_g = netW_g(his_input, format = 'index')
@@ -430,11 +474,11 @@ def val():
             ques_emb_d = netW_d(ques_input, format = 'index')
             his_emb_d = netW_d(his_input, format = 'index')
 
-            ques_hidden1 = repackage_hidden(ques_hidden1, batch_size)
-            ques_hidden2 = repackage_hidden(ques_hidden2, batch_size)
+            ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
+            ques_hidden2 = repackage_hidden_new(ques_hidden2, batch_size)
 
-            hist_hidden1 = repackage_hidden(hist_hidden1, his_emb_g.size(1))
-            hist_hidden2 = repackage_hidden(hist_hidden2, his_emb_d.size(1))
+            hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
+            hist_hidden2 = repackage_hidden_new(hist_hidden2, his_emb_d.size(1))
 
             featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
                                                 ques_hidden1, hist_hidden1, rnd+1)
@@ -476,7 +520,7 @@ def val():
             rank_G += list(rank.view(-1).data.cuda().numpy())
 
             opt_ans_emb = netW_d(opt_ans_target, format = 'index')
-            opt_hidden = repackage_hidden(opt_hidden, opt_ans_target.size(1))
+            opt_hidden = repackage_hidden_new(opt_hidden, opt_ans_target.size(1))
             opt_feat = netD(opt_ans_emb, opt_ans_target, opt_hidden, vocab_size)
             opt_feat = opt_feat.view(batch_size, -1, opt.ninp)
 
@@ -492,11 +536,6 @@ def val():
             rank_D += list(rank.view(-1).data.cuda().numpy())
 
         i += 1
-
-
-
-
-
 
     return rank_G, rank_D
 
