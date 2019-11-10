@@ -12,7 +12,7 @@ import numpy as np
 import json
 import progressbar
 import sys
-sys.path.append('../')
+sys.path.insert(1, '/home/hitarth/gpu/visDial.pytorch')
 
 
 import torch
@@ -37,9 +37,9 @@ import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../data/vdl_img_vgg_demo.h5', help='path to image feature, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='../data/visdial_data_demo.h5', help='path to label, now hdf5 file')
-parser.add_argument('--input_json', default='../data/visdial_params_demo.json', help='path to dataset, now json file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg_demo.h5', help='path to image feature, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data_demo.h5', help='path to label, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params_demo.json', help='path to dataset, now json file')
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
@@ -95,11 +95,13 @@ if opt.model_path != '':
     opt.start_epoch = checkpoint['epoch']
     opt.model_path = model_path
     opt.batchSize = 1
+    save_path = opt.save_path
 else:
     # create new folder.
     t = datetime.datetime.now()
     cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
     save_path = os.path.join(opt.outf, opt.decoder + '.' + cur_time)
+    opt.save_path = save_path
     try:
         os.makedirs(save_path)
     except OSError:
@@ -198,23 +200,23 @@ def train(epoch):
             real_len = answerLen[:,rnd]
             wrong_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            ans_input = torch.LongTensor(ans.size())
+            ans_input = torch.LongTensor(ans.size()).cuda()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size())
+            ans_target = torch.LongTensor(tans.size()).cuda()
             ans_target.copy_(tans)
 
-            wrong_ans_input = torch.LongTensor(wrong_ans.size())
+            wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
             wrong_ans_input.copy_(wrong_ans)
 
             # sample in-batch negative index
-            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long)
+            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
             sample_batch_neg(answerIdx[:,rnd], opt_answerIdx[:,rnd,:], batch_sample_idx, opt.neg_batch_sample)
 
             ques_emb = netW(ques_input, format = 'index')
@@ -295,16 +297,16 @@ def val():
             opt_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            opt_ans_input = torch.LongTensor(opt_ans.size())
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
             opt_ans_input.copy_(opt_ans)
 
-            gt_index = torch.LongTensor(gt_id.size())
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
             gt_index.copy_(gt_id)
 
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
@@ -336,7 +338,7 @@ def val():
 
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
             
         i += 1
         sys.stdout.write('Evaluating: {:d}/{:d}  \r' \

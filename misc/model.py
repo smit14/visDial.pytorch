@@ -50,10 +50,10 @@ class _netD(nn.Module):
         self.ninp = ninp
         self.d = dropout
 
-        self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers)
-        self.W1 = nn.Linear(self.nhid, self.nhid)
-        self.W2 = nn.Linear(self.nhid, 1)
-        self.fc = nn.Linear(nhid, ninp)
+        self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers).cuda()
+        self.W1 = nn.Linear(self.nhid, self.nhid).cuda()
+        self.W2 = nn.Linear(self.nhid, 1).cuda()
+        self.fc = nn.Linear(nhid, ninp).cuda()
 
     def forward(self, input_feat, idx, hidden, vocab_size):
 
@@ -61,7 +61,7 @@ class _netD(nn.Module):
         mask = idx.data.eq(0)  # generate the mask
         mask[idx.data == vocab_size] = 1 # also set the last token to be 1
         if isinstance(input_feat, Variable):
-            mask = Variable(mask, volatile=input_feat.volatile)
+            mask = Variable(mask, volatile=input_feat.volatile).cuda()
 
         # Doing self attention here.
         atten = self.W2(F.dropout(F.tanh(self.W1(output.view(-1, self.nhid))), self.d, training=self.training)).view(idx.size())
@@ -76,8 +76,8 @@ class _netD(nn.Module):
     def init_hidden(self, bsz):
         weight = next(self.parameters()).data
         if self.rnn_type == 'LSTM':
-            return (Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()),
-                    Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()))
+            return (Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cuda(),
+                    Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cuda())
         else:
             return Variable(weight.new(self.nlayers, bsz, self.nhid).zero_())
 
@@ -91,7 +91,7 @@ class  LMCriterion(nn.Module):
 
         mask = target.data.gt(0)  # generate the mask
         if isinstance(input, Variable):
-            mask = Variable(mask, volatile=input.volatile)
+            mask = Variable(mask, volatile=input.volatile).cuda()
         
         out = torch.masked_select(logprob_select, mask)
 
