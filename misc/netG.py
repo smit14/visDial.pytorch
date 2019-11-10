@@ -17,7 +17,8 @@ class _netG(nn.Module):
 		self.nhid = nhid
 		self.nlayers = nlayers
 		self.mos_flag = mos
-		self.mos_layer = mixture_of_softmaxes(nhid, 5, ntoken + 1)
+		if(self.mos_flag):
+			self.mos_layer = mixture_of_softmaxes(nhid, 5, ntoken + 1)
 		self.decoder = nn.Linear(nhid, ntoken+1)
 		self.d = dropout
 		self.beta = 3
