@@ -37,13 +37,13 @@ import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg_demo.h5', help='path to image feature, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='../script/data/visdial_data_demo.h5', help='path to label, now hdf5 file')
-parser.add_argument('--input_json', default='../script/data/visdial_params_demo.json', help='path to dataset, now json file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5', help='path to image feature, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5', help='path to label, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params.json', help='path to dataset, now json file')
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=100, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')

@@ -32,12 +32,12 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg_demo.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='../script/data/visdial_data_demo.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_json', default='../script/data/visdial_params_demo.json', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params.json', help='path to dataset, now hdf5 file')
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
 parser.add_argument('--encoder', default='scrach', help='what encoder to use.')
-parser.add_argument('--num_val', default=20, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
 parser.add_argument('--update_D', action='store_true', help='whether train use the GAN loss.')
 parser.add_argument('--update_LM', action='store_true', help='whether train use the GAN loss.')
 
