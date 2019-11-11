@@ -3,7 +3,7 @@ import argparse
 import os
 import random
 import sys
-sys.path.insert(1, '/home/hitarth/gpu/visDial.pytorch')
+
 
 import pdb
 import time
@@ -68,10 +68,11 @@ parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 
 parser.add_argument('--log_interval', type=int, default=5, help='how many iterations show the log info')
+parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
 print(opt)
-
+sys.path.insert(1, opt.path_to_home)
 opt.manualSeed = random.randint(1, 10000) # fix seed
 
 print("Random Seed: ", opt.manualSeed)
