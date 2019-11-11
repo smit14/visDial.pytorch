@@ -52,7 +52,7 @@ parser.add_argument('--start_epoch', type=int, default=1, help='start of epochs 
 parser.add_argument('--teacher_forcing', type=int, default=1, help='start of epochs to train for')
 
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=6)
-parser.add_argument('--batchSize', type=int, default=100, help='input batch size')
+parser.add_argument('--batchSize', type=int, default=128, help='input batch size')
 parser.add_argument('--save_iter', type=int, default=5, help='number of epochs to train for')
 
 parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
@@ -71,7 +71,7 @@ parser.add_argument('--nlayers', type=int, default=1, help='number of layers')
 parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
-parser.add_argument('--log_interval', type=int, default=1, help='how many iterations show the log info')
+parser.add_argument('--log_interval', type=int, default=5, help='how many iterations show the log info')
 parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
