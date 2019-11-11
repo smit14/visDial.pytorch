@@ -41,8 +41,8 @@ class train(data.Dataset) :  # torch wrapper
         print('%s number of data: %d' % (data_split, e - s))
         # load the data.
         f = h5py.File(input_img_h5, 'r')
-        self.imgs = f['images_' + split][s :e]
-        f.close()
+        self.imgs = f['images_' + split]
+        # f.close()
 
         print('Loading txt from %s' % input_ques_h5)
         f = h5py.File(input_ques_h5, 'r')
