@@ -27,12 +27,12 @@ import torchvision.utils as vutils
 from torch.autograd import Variable
 
 
-from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
-
-import misc.dataLoader as dl
-import misc.model as model
-from misc.encoder_QIH import _netE
+# from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+#                     decode_txt, sample_batch_neg, l2_norm
+#
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
 import datetime
 
 parser = argparse.ArgumentParser()
@@ -77,6 +77,14 @@ parser.add_argument('--path_to_home',type=str)
 opt = parser.parse_args()
 print(opt)
 sys.path.insert(1, opt.path_to_home)
+
+from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+                    decode_txt, sample_batch_neg, l2_norm
+
+import misc.dataLoader as dl
+import misc.model as model
+from misc.encoder_QIH import _netE
+
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 print("Random Seed: ", opt.manualSeed)
