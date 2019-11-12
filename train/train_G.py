@@ -33,7 +33,7 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_img_h5', default='../script/data/vgg16_data.hdf5', help='path to dataset, now hdf5 file')
 parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5', help='path to dataset, now hdf5 file')
 parser.add_argument('--input_json', default='../script/data/visdial_params.json', help='path to dataset, now hdf5 file')
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
