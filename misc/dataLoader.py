@@ -24,8 +24,8 @@ class train(data.Dataset) :  # torch wrapper
         self.itow = f['itow']
         self.img_info = f['img_' + split]
 
-        f = h5py.File(input_img_h5, 'r')
-        self.imgs = f['images_' + split]
+        f_image = h5py.File(input_img_h5, 'r')
+        self.imgs = f_image['images_' + split]
 
         # get the data split.
         total_num = self.imgs.shape[0]-1
@@ -163,8 +163,8 @@ class validate(data.Dataset) :  # torch wrapper
         self.itow = f['itow']
         self.img_info = f['img_' + split]
 
-        f = h5py.File(input_img_h5, 'r')
-        self.imgs = f['images_' + split]
+        f_image = h5py.File(input_img_h5, 'r')
+        self.imgs = f_image['images_' + split]
 
         # get the data split.
         total_num = self.imgs.shape[0]-1
