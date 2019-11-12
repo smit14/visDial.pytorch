@@ -24,8 +24,11 @@ class train(data.Dataset) :  # torch wrapper
         self.itow = f['itow']
         self.img_info = f['img_' + split]
 
+        f = h5py.File(input_img_h5, 'r')
+        self.imgs = f['images_' + split]
+
         # get the data split.
-        total_num = len(self.img_info)
+        total_num = self.imgs.shape[0]-1
         if data_split == 'train' :
             s = 0
             e = total_num - num_val
@@ -40,8 +43,7 @@ class train(data.Dataset) :  # torch wrapper
 
         print('%s number of data: %d' % (data_split, e - s))
         # load the data.
-        f = h5py.File(input_img_h5, 'r')
-        self.imgs = f['images_' + split]
+
         # f.close()
 
         print('Loading txt from %s' % input_ques_h5)
@@ -72,7 +74,7 @@ class train(data.Dataset) :  # torch wrapper
 
     def __getitem__(self, index) :
         # get the image
-        img = torch.from_numpy(self.imgs[index])
+        img = torch.from_numpy(self.imgs[index+1])
 
         # get the history
         #Format of one row of his:
@@ -161,8 +163,11 @@ class validate(data.Dataset) :  # torch wrapper
         self.itow = f['itow']
         self.img_info = f['img_' + split]
 
+        f = h5py.File(input_img_h5, 'r')
+        self.imgs = f['images_' + split]
+
         # get the data split.
-        total_num = len(self.img_info)
+        total_num = self.imgs.shape[0]-1
         if data_split == 'train' :
             e = total_num - num_val
         elif data_split == 'val' :
@@ -176,9 +181,6 @@ class validate(data.Dataset) :  # torch wrapper
         print('%s number of data: %d' % (data_split, e - s))
 
         # load the data.
-        f = h5py.File(input_img_h5, 'r')
-        self.imgs = f['images_' + split][s :e]
-        f.close()
 
         print('Loading txt from %s' % input_ques_h5)
         f = h5py.File(input_ques_h5, 'r')
@@ -210,7 +212,7 @@ class validate(data.Dataset) :  # torch wrapper
 
         # get the image
         img_id = self.img_info[index]['imgId']
-        img = torch.from_numpy(self.imgs[index])
+        img = torch.from_numpy(self.imgs[index+1])
         # get the history
         his = np.zeros((self.total_qa_pairs, self.his_length))
         his[0, self.his_length - self.cap_len[index] :] = self.cap[index, :self.cap_len[index]]
