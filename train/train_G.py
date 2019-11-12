@@ -164,6 +164,7 @@ if opt.model_path != '':
     netG.load_state_dict(checkpoint['netG'])
 
 # training function
+
 def train(epoch):
     netW.train()
     netE.train()
@@ -237,6 +238,8 @@ def train(epoch):
                 .format(i, len(dataloader), epoch, average_loss, lr))
             average_loss = 0
             count = 0
+            print(time.time()-t)
+            t = time.time()
 
     return average_loss, lr
 
