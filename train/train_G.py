@@ -165,7 +165,9 @@ if opt.model_path != '':
 
 # training function
 
+t = time.time()
 def train(epoch):
+    global t
     netW.train()
     netE.train()
     netG.train()
