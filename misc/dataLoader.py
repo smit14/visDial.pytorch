@@ -2,6 +2,8 @@ import torch.utils.data as data
 from PIL import Image
 import torch
 import numpy as np
+import torch.multiprocessing as mp
+mp.set_start_method('spawn')
 import h5py
 import json
 import pdb
