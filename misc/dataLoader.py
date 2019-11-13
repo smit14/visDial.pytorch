@@ -13,7 +13,7 @@ from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, de
 
 class train(data.Dataset) :  # torch wrapper
     def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split) :
-
+        print(h5py.version.info)
         print('DataLoader loading: %s' % data_split)
         print('Loading image feature from %s' % input_img_h5)
 
