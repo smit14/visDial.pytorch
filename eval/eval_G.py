@@ -111,7 +111,7 @@ img_feat_size = 512
 
 netE = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 netW = model._netW(n_words, opt.ninp, opt.dropout)
-netG = _netG(opt.model, n_words, opt.ninp, opt.nhid, opt.nlayers, opt.dropout)
+netG = _netG(opt.model, n_words, opt.ninp, opt.nhid, opt.nlayers, opt.dropout,opt.mos)
 critG = model.LMCriterion()
 sampler = model.gumbel_sampler()
 
