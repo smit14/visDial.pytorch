@@ -240,7 +240,7 @@ if opt.cuda:
     critG.cuda()
     sampler.cuda()
 
-path = './save/'
+path = './save/G_QIH_VGG.13-11-3/'
 for i in range(1,17):
     idx = 2*i
     str = 'epoch_{}'.format(idx)
