@@ -243,7 +243,7 @@ if opt.cuda:
 path = './save/G_QIH_VGG.13-11-3/'
 for i in range(1,17):
     idx = 2*i
-    str = 'epoch_{}'.format(idx)
+    str = 'epoch_{}.pth'.format(idx)
     model_path = path+str
     checkpoint = torch.load(model_path)
     netW.load_state_dict(checkpoint['netW'])
