@@ -21,25 +21,37 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
+# from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
+#                     decode_txt, sample_batch_neg, l2_norm
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
+# import datetime
+# from misc.netG import _netG
+
+parser = argparse.ArgumentParser()
+
+
+parser.add_argument('--data_dir', default='../script/old_data', help='folder to output images and model checkpoints')
+parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
+parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
+parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
+
+parser.add_argument('--model_path', default='../script/save/HCIAE-G-MLE.pth', help='folder to output images and model checkpoints')
+parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
+parser.add_argument('--path_to_home',type=str)
+
+opt = parser.parse_args()
+sys.path.insert(1, opt.path_to_home)
+
 from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
                     decode_txt, sample_batch_neg, l2_norm
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
-import datetime
 from misc.netG import _netG
-
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--data_dir', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
-parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
-parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
-
-parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
-
-opt = parser.parse_args()
+import datetime
+from misc.utils import repackage_hidden_new
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 if opt.cuda:
@@ -134,7 +146,10 @@ def eval():
 
         batch_size = question.size(0)
         image = image.view(-1, 512)
-        img_input.data.resize_(image.size()).copy_(image)
+
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
+        # img_input.data.resize_(image.size()).copy_(image)
 
         for rnd in range(10):
             # get the corresponding round QA and history.
@@ -143,19 +158,34 @@ def eval():
             ans = opt_answer[:,rnd,:,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            his_input.data.resize_(his.size()).copy_(his)
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            ans_input.data.resize_(ans.size()).copy_(ans)
-            ans_target.data.resize_(tans.size()).copy_(tans)
+            # his_input.data.resize_(his.size()).copy_(his)
+            # ques_input.data.resize_(ques.size()).copy_(ques)
+            # ans_input.data.resize_(ans.size()).copy_(ans)
+            # ans_target.data.resize_(tans.size()).copy_(tans)
+            #
+            # gt_index.data.resize_(gt_id.size()).copy_(gt_id)
 
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
+
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
+
+            ans_input = torch.LongTensor(ans.size()).cuda()
+            ans_input.copy_(ans)
+
+            ans_target = torch.LongTensor(tans.size()).cuda()
+            ans_target.copy_(tans)
+
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index.copy_(gt_id)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             encoder_feat, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                 ques_hidden, hist_hidden, rnd+1)
