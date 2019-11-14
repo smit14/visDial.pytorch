@@ -245,7 +245,7 @@ for i in range(1,17):
     idx = 2*i
     str = 'epoch_{}'.format(idx)
     model_path = path+str
-    checkpoint = torch.load(opt.model_path)
+    checkpoint = torch.load(model_path)
     netW.load_state_dict(checkpoint['netW'])
     netE.load_state_dict(checkpoint['netE'])
     netG.load_state_dict(checkpoint['netG'])
