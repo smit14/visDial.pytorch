@@ -13,6 +13,10 @@ from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, de
 
 class train(data.Dataset) :  # torch wrapper
     def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split) :
+        #This is the number of images for which we have copied the new vgg features to the parallely
+        #accessible h5 file. DO NOT CHANGE THIS!!!
+        TOTAL_VALID_IMAGES = 82000
+
         print(h5py.version.info)
         print('DataLoader loading: %s' % data_split)
         print('Loading image feature from %s' % input_img_h5)
@@ -30,7 +34,7 @@ class train(data.Dataset) :  # torch wrapper
         self.imgs = self.f_image['images_' + split]
 
         # get the data split.
-        total_num = self.imgs.shape[0]-1
+        total_num = TOTAL_VALID_IMAGES
         if data_split == 'train' :
             s = 0
             e = total_num - num_val
@@ -152,7 +156,10 @@ class train(data.Dataset) :  # torch wrapper
 
 class validate(data.Dataset) :  # torch wrapper
     def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split) :
+        # This is the number of images for which we have copied the new vgg features to the parallely
+        # accessible h5 file. DO NOT CHANGE THIS!!!
 
+        TOTAL_VALID_IMAGES = 82000
         print('DataLoader loading: %s' % data_split)
         print('Loading image feature from %s' % input_img_h5)
 
@@ -169,7 +176,7 @@ class validate(data.Dataset) :  # torch wrapper
         self.imgs = self.f_image['images_' + split]
 
         # get the data split.
-        total_num = self.imgs.shape[0]-1
+        total_num = TOTAL_VALID_IMAGES
         if data_split == 'train' :
             e = total_num - num_val
         elif data_split == 'val' :
