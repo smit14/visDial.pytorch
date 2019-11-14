@@ -279,7 +279,7 @@ for i in range(1,17):
     img_input = Variable(img_input)
     his_input = Variable(his_input)
     gt_index = Variable(gt_index)
-
+    t = time.time()
     print('Evaluating for epoch {}'.format(idx))
     rank_all, val_loss = val()
     R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
@@ -287,5 +287,7 @@ for i in range(1,17):
     R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
     ave = np.sum(np.array(rank_all)) / float(len(rank_all))
     mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
-    print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(epoch, len(dataloader_val), mrr, R1, R5, R10, ave))
+    print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f %f' %(idx, len(dataloader_val), mrr, R1, R5, R10, ave, time.time()-t))
+    t = time.time()
+
 
