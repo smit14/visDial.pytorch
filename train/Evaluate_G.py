@@ -280,7 +280,7 @@ for i in range(1,17):
     his_input = Variable(his_input)
     gt_index = Variable(gt_index)
 
-    print('Evaluating...')
+    print('Evaluating for epoch {}'.format(idx))
     rank_all, val_loss = val()
     R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
     R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
