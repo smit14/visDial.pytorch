@@ -73,11 +73,14 @@ if opt.model_path != '':
     input_img_h5 = opt.input_img_h5
     input_ques_h5 = opt.input_ques_h5
     input_json = opt.input_json
-    # opt = checkpoint['opt']
+    opt = checkpoint['opt']
     opt.start_epoch = checkpoint['epoch']
     opt.batchSize = 5
     opt.data_dir = data_dir
     opt.model_path = model_path
+    opt.input_img_h5 = input_img_h5
+    opt.input_ques_h5 = input_ques_h5
+    opt.input_json = input_json
 
 ####################################################################################
 # Data Loader
