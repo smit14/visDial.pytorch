@@ -82,7 +82,8 @@ if opt.model_path != '':
 ####################################################################################
 # Data Loader
 ####################################################################################
-
+print('data dir',opt.data_dir)
+print('input json',input_json)
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
 input_json = os.path.join(opt.data_dir, opt.input_json)
