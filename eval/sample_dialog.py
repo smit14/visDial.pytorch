@@ -92,7 +92,6 @@ from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
 
-
 opt.manualSeed = random.randint(1, 10000) # fix seed
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
@@ -142,8 +141,8 @@ critLM = model.LMCriterion()
 
 if True:# opt.model_path_D != '' and opt.model_path_G != '':
     print('Loading Generative model...')
-    netW_g.load_state_dict(checkpoint['netW_g'])
-    netE_g.load_state_dict(checkpoint['netE_g'])
+    netW_g.load_state_dict(checkpoint['netW'])
+    netE_g.load_state_dict(checkpoint['netE'])
     netG.load_state_dict(checkpoint['netG'])
 
 if opt.cuda: # ship to cuda, if has GPU
