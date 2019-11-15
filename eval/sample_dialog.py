@@ -226,7 +226,7 @@ def val():
             _, ques_hidden1 = netG(featG.view(1,-1,opt.ninp), ques_hidden1)
             #_, ques_hidden = netG(encoder_feat.view(1,-1,opt.ninp), ques_hidden)
             # extend the hidden
-            sample_ans_input = torch.LongTensor(1, opt.batchSize)
+            sample_ans_input = torch.LongTensor(1, opt.batchSize).cuda()
             sample_ans_input.resize_((1, batch_size)).fill_(vocab_size)
             
             sample_opt = {'beam_size':1}
