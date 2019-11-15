@@ -80,7 +80,7 @@ class train(data.Dataset) :  # torch wrapper
 
     def __getitem__(self, index) :
         # get the image
-        img = torch.from_numpy(self.imgs[index+1])
+        img = torch.from_numpy(self.imgs[index])
 
         # get the history
         #Format of one row of his:
@@ -158,14 +158,16 @@ class validate(data.Dataset) :  # torch wrapper
     def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split) :
         # This is the number of images for which we have copied the new vgg features to the parallely
         # accessible h5 file. DO NOT CHANGE THIS!!!
-
-        TOTAL_VALID_IMAGES = 82000
+        TOTAL_VALID_TEST_IMAGES = 40000
+        TOTAL_VALID_TRAIN_IMAGES = 82000
         print('DataLoader loading: %s' % data_split)
         print('Loading image feature from %s' % input_img_h5)
-
+        total_num = 0
         if data_split == 'test' :
+            total_num = TOTAL_VALID_TEST_IMAGES
             split = 'val'
         else :
+            total_num = TOTAL_VALID_TRAIN_IMAGES
             split = 'train'  # train and val split both corresponding to 'train'
 
         f = json.load(open(input_json, 'r'))
@@ -176,7 +178,7 @@ class validate(data.Dataset) :  # torch wrapper
         self.imgs = self.f_image['images_' + split]
 
         # get the data split.
-        total_num = TOTAL_VALID_IMAGES
+
         if data_split == 'train' :
             e = total_num - num_val
         elif data_split == 'val' :
@@ -221,7 +223,7 @@ class validate(data.Dataset) :  # torch wrapper
 
         # get the image
         img_id = self.img_info[index]['imgId']
-        img = torch.from_numpy(self.imgs[index+1])
+        img = torch.from_numpy(self.imgs[index])
         # get the history
         his = np.zeros((self.total_qa_pairs, self.his_length))
         his[0, self.his_length - self.cap_len[index] :] = self.cap[index, :self.cap_len[index]]

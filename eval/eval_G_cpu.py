@@ -69,7 +69,7 @@ if torch.cuda.is_available() and not opt.cuda:
 
 if opt.model_path != '':
     print("=> loading checkpoint '{}'".format(opt.model_path))
-    checkpoint = torch.load(opt.model_path)
+    checkpoint = torch.load(opt.model_path,map_location=torch.device('cpu'))
     model_path = opt.model_path
     data_dir = opt.data_dir
     input_img_h5 = opt.input_img_h5
