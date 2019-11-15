@@ -32,9 +32,9 @@ import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='data/visdial_data.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_json', default='data/visdial_params.json', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params.json', help='path to dataset, now hdf5 file')
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
 parser.add_argument('--encoder', default='QIH_G', help='what encoder to use.')
 parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
@@ -44,7 +44,7 @@ parser.add_argument('--update_LM', action='store_true', help='whether train use 
 #parser.add_argument('--model_path', default='save/QIH_perceptual.1-5-21/epoch_8.pth', help='folder to output images and model checkpoints')
 #parser.add_argument('--model_path', default='save/GAN_0.4.9-5-12/epoch_5.pth', help='folder to output images and model checkpoints')
 #parser.add_argument('--model_path', default='save/G/epoch_30.pth', help='folder to output images and model checkpoints')
-parser.add_argument('--model_path', default='save/scrach.28-6-21/epoch_4.pth', help='folder to output images and model checkpoints')
+parser.add_argument('--model_path', default='../script/save/HCIAE-G-MLE.pth', help='folder to output images and model checkpoints')
 
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
 parser.add_argument('--neg_batch_sample', type=int, default=30, help='folder to output images and model checkpoints')
@@ -120,7 +120,6 @@ ans_length = dataset_val.ans_length + 1
 his_length = dataset_val.ans_length + dataset_val.ques_length
 itow = dataset_val.itow
 img_feat_size = 512
-
 
 print('init Generative model...')
 netG = _netG(opt.model, vocab_size, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, vocab_size)
