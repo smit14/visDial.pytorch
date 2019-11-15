@@ -80,7 +80,7 @@ class train(data.Dataset) :  # torch wrapper
 
     def __getitem__(self, index) :
         # get the image
-        img = torch.from_numpy(self.imgs[index+1])
+        img = torch.from_numpy(self.imgs[index])
 
         # get the history
         #Format of one row of his:
@@ -221,7 +221,7 @@ class validate(data.Dataset) :  # torch wrapper
 
         # get the image
         img_id = self.img_info[index]['imgId']
-        img = torch.from_numpy(self.imgs[index+1])
+        img = torch.from_numpy(self.imgs[index])
         # get the history
         his = np.zeros((self.total_qa_pairs, self.his_length))
         his[0, self.his_length - self.cap_len[index] :] = self.cap[index, :self.cap_len[index]]
