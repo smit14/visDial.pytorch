@@ -10,7 +10,7 @@ def download_model(path):
 def download_feat(path):
     # os.system('wget https://filebox.ece.vt.edu/~jiasenlu/codeRelease/visDial.pytorch/data/vdl_img_vgg.h5 -P %s' %(path))
     os.system('pip install gdown --user')
-    os.system('wget gdown https://drive.google.com/uc?id=15S5vzY-O5bCxlv4h6cvprMySL7N9yXiJ -P %s' % (path))
+    os.system('gdown https://drive.google.com/uc?id=15S5vzY-O5bCxlv4h6cvprMySL7N9yXiJ -P %s' % (path))
     os.system('wget https://filebox.ece.vt.edu/~jiasenlu/codeRelease/visDial.pytorch/data/visdial_data.h5 -P %s' %(path))
     os.system('wget https://filebox.ece.vt.edu/~jiasenlu/codeRelease/visDial.pytorch/data/visdial_params.json -P %s' %(path))
 
