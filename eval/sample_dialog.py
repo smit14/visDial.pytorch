@@ -132,7 +132,7 @@ itow = dataset_val.itow
 img_feat_size = 512
 
 print('init Generative model...')
-netG = _netG(opt.model, vocab_size, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, vocab_size)
+netG = _netG(opt.model, vocab_size, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, False)
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 netW_g = model._netW(vocab_size, opt.ninp, opt.dropout)
 sampler = model.gumbel_sampler()
