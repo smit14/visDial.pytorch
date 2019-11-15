@@ -21,7 +21,7 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, decode_txt
+from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
@@ -135,10 +135,13 @@ def eval():
 
         batch_size = question.size(0)
         image = image.view(-1, 512)
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
+
         save_tmp = [[] for j in range(batch_size)]
 
         for rnd in range(10):
+            #todo: remove this hard coded rnd = 5 after verifying!
             rnd=5
             # get the corresponding round QA and history.
             ques = question[:,rnd,:].t()
@@ -147,19 +150,25 @@ def eval():
             opt_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
 
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
-            opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
+
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index.copy_(gt_id)
+
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input.copy_(opt_ans)
 
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden(hist_hidden, his_input.size(1))
+            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
             featD, ques_hidden = netE(ques_emb, his_emb, img_input, \
                                                                     ques_hidden, hist_hidden, rnd+1)
@@ -167,7 +176,7 @@ def eval():
             #img_atten[i*batch_size:(i+1)*batch_size, rnd, :] = img_atten_weight.data.view(batch_size, 7, 7)
 
             opt_ans_emb = netW(opt_ans_input, format = 'index')
-            opt_hidden = repackage_hidden(opt_hidden, opt_ans_input.size(1))
+            opt_hidden = repackage_hidden_new(opt_hidden, opt_ans_input.size(1))
             opt_feat = netD(opt_ans_emb, opt_ans_input, opt_hidden, n_words)
             opt_feat = opt_feat.view(batch_size, -1, opt.ninp)
 
@@ -183,7 +192,7 @@ def eval():
 
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_all_tmp += list(rank.view(-1).data.cuda().numpy())
+            rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
 
         i += 1
 
