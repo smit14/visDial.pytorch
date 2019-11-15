@@ -82,7 +82,7 @@ from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
 from misc.utils import repackage_hidden_new
-
+from script.test_data import check_data
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 
@@ -92,6 +92,12 @@ torch.manual_seed(opt.manualSeed)
 
 cudnn.benchmark = True
 
+# ---------------------- check for data correctnes -------------------------------------
+if check_data()==False:
+    print("data is not up-to-date")
+    exit(255)
+
+# ---------------------- -------------------------------------------------------
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 

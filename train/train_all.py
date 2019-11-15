@@ -91,12 +91,21 @@ import misc.model as model
 from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
+from script.test_data import check_data
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 np.random.seed(opt.manualSeed)
+
+# ---------------------- check for data correctnes -------------------------------------
+if check_data() == False:
+    print("data is not up-to-date")
+    exit(255)
+
+# ---------------------- -------------------------------------------------------
+
 
 if opt.cuda:
     torch.cuda.manual_seed(opt.manualSeed)
