@@ -22,13 +22,13 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
-import misc.dataLoader as dl
-import misc.model as model
-from misc.encoder_QIH import _netE
-from misc.netG import _netG
-import datetime
+# from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+#                     decode_txt, sample_batch_neg, l2_norm
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
+# from misc.netG import _netG
+# import datetime
 
 parser = argparse.ArgumentParser()
 
@@ -78,10 +78,21 @@ parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--gumble_weight', type=int, default=0.3, help='folder to output images and model checkpoints')
+parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
-
+sys.path.insert(1, opt.path_to_home)
 print(opt)
+
+from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+                    decode_txt, sample_batch_neg, l2_norm
+import misc.dataLoader as dl
+import misc.model as model
+from misc.encoder_QIH import _netE
+from misc.netG import _netG
+import datetime
+
+
 opt.manualSeed = random.randint(1, 10000) # fix seed
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
