@@ -3,12 +3,13 @@ import json
 import h5py
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--path', default='data/vdl_img_vgg.h5', help='path to image feature, now hdf5 file')
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--path', default='data/vdl_img_vgg.h5', help='path to image feature, now hdf5 file')
+#
+# opt = parser.parse_args()
+# path = opt.path
 
-opt = parser.parse_args()
-path = opt.path
-
+path = '../script/data/vdl_img_vgg.h5'
 f = h5py.File(path, 'r')
 train_feats = f['images_train']
 val_feats = f['images_val']
