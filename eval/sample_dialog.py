@@ -22,7 +22,7 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
+from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
                     decode_txt, sample_batch_neg, l2_norm
 import misc.dataLoader as dl
 import misc.model as model
@@ -172,7 +172,8 @@ def val():
 
         batch_size = question.size(0)
         image = image.view(-1, 512)
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
 
         save_tmp = [[] for j in range(batch_size)]
         for rnd in range(10):
@@ -186,18 +187,27 @@ def val():
             gt_id = answer_ids[:,rnd]
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
-            opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
-            opt_ans_target.data.resize_(opt_tans.size()).copy_(opt_tans)
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
+
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
+
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input.copy_(opt_ans)
+
+            opt_ans_target = torch.LongTensor(opt_tans.size()).cuda()
+            opt_ans_target.copy_(opt_tans)
+
+            gt_index = torch.LongTensor(gt_id.size())
+            gt_index.copy_(gt_id)
 
             ques_emb_g = netW_g(ques_input, format = 'index')
             his_emb_g = netW_g(his_input, format = 'index')
 
-            ques_hidden1 = repackage_hidden(ques_hidden1, batch_size)
+            ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
 
-            hist_hidden1 = repackage_hidden(hist_hidden1, his_emb_g.size(1))
+            hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
 
             featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
                                                 ques_hidden1, hist_hidden1, rnd+1)
