@@ -177,6 +177,7 @@ class _netG(nn.Module):
 		batch_size = input.size(1)
 		seq = []
 		seqLogprobs = []
+		logprobs = None
 		for t in range(self.seq_length + 1):
 			if t == 0: # input <bos>
 				it = input.data
