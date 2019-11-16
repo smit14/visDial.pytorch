@@ -174,7 +174,7 @@ def val():
 
     result_all = []
 
-    while i < 30:#len(dataloader_val):
+    while i < 300:#len(dataloader_val):
         data = data_iter_val.next()
         image, history, question, answer, answerT, questionL, opt_answer, \
                     opt_answerT, answer_ids, answerLen, opt_answerLen, img_id  = data
@@ -342,8 +342,5 @@ gt_index = Variable(gt_index)
 epoch = 0
 print('Evaluating ... ')
 result_all = val()
-print(type(result_all))
-print(result_all[0][0])
-# results = result_all.detach().numpy()
 
 json.dump(result_all, open('Per_greedy.json', 'w'))
