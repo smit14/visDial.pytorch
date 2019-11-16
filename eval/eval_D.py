@@ -21,12 +21,12 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
-import misc.dataLoader as dl
-import misc.model as model
-from misc.encoder_QIH import _netE
-import datetime
-import h5py
+# from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
+# import datetime
+# import h5py
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--data_dir', default='../script/data', help='folder to output images and model checkpoints')
@@ -36,8 +36,10 @@ parser.add_argument('--input_json', default='visdial_params.json', help='visdial
 
 parser.add_argument('--model_path', default='../script/save/dis/epoch_12.pth', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
+parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
+sys.path.insert(1, opt.path_to_home)
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 if opt.cuda:
@@ -45,6 +47,15 @@ if opt.cuda:
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
+
+
+from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
+import misc.dataLoader as dl
+import misc.model as model
+from misc.encoder_QIH import _netE
+import datetime
+import h5py
+
 
 cudnn.benchmark = True
 
