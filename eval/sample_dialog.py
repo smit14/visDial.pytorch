@@ -166,7 +166,7 @@ def val():
 
     hist_hidden1 = netE_g.init_hidden(opt.batchSize)
 
-    bar = progressbar.ProgressBar(max_value=300)#len(dataloader))
+    bar = progressbar.ProgressBar(max_value=len(dataloader_val))
     data_iter_val = iter(dataloader_val)
 
     count = 0
