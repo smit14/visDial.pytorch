@@ -173,8 +173,8 @@ def val():
     i = 0
 
     result_all = []
-    print('length of dataloader: ', len(dataloader_val))
-    while i < 300:#len(dataloader_val):
+    # print('length of dataloader: ', len(dataloader_val))
+    while i < len(dataloader_val):
         data = data_iter_val.next()
         image, history, question, answer, answerT, questionL, opt_answer, \
                     opt_answerT, answer_ids, answerLen, opt_answerLen, img_id  = data
