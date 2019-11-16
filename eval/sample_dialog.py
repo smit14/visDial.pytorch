@@ -273,7 +273,7 @@ def val():
         i += 1
         bar.update(i)
 
-        result_all += save_tmp
+        result_all += save_tmp.detach().numpy()
 
     return result_all
 
@@ -343,6 +343,6 @@ epoch = 0
 print('Evaluating ... ')
 result_all = val()
 print(type(result_all))
-results = result_all.detach().numpy()
+# results = result_all.detach().numpy()
 
 json.dump(result_all, open('Per_greedy.json', 'w'))
