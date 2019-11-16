@@ -29,12 +29,12 @@ import datetime
 import h5py
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--data_dir', default='', help='folder to output images and model checkpoints')
+parser.add_argument('--data_dir', default='../script/data', help='folder to output images and model checkpoints')
 parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
 parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
 parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
 
-parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
+parser.add_argument('--model_path', default='../script/save/dis/epoch_12.pth', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 
 opt = parser.parse_args()
@@ -142,7 +142,7 @@ def eval():
 
         for rnd in range(10):
             #todo: remove this hard coded rnd = 5 after verifying!
-            rnd=5
+            # rnd=5
             # get the corresponding round QA and history.
             ques = question[:,rnd,:].t()
             his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
@@ -204,9 +204,9 @@ def eval():
             R10 = np.sum(np.array(rank_all_tmp)<=10) / float(len(rank_all_tmp))
             ave = np.sum(np.array(rank_all_tmp)) / float(len(rank_all_tmp))
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
-            print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+            print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
-    return img_atten
+    return rank_all_tmp
 
 ####################################################################################
 # Main
@@ -261,11 +261,11 @@ noise_input = Variable(noise_input)
 batch_sample_idx = Variable(batch_sample_idx)
 gt_index = Variable(gt_index)
 
-atten = eval()
+rank_all = eval()
 
 R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
 R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
 R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
 ave = np.sum(np.array(rank_all)) / float(len(rank_all))
 mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
-print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(len(dataloader_val), len(dataloader_val), mrr, R1, R5, R10, ave))
