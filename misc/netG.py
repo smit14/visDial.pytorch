@@ -206,10 +206,10 @@ class _netG(nn.Module):
 			if self.mos_flag:
 				decoded = self.mos_layer(output.view(
 					output.size(0) * output.size(1), output.size(2)))
-				logprob = torch.log(self.beta * decoded)
+				logprobs = torch.log(self.beta * decoded)
 			else:
 				decoded = self.decoder(output.view(
 					output.size(0) * output.size(1), output.size(2)))
-				logprob = F.log_softmax(self.beta * decoded)
+				logprobs = F.log_softmax(self.beta * decoded)
 
 		return torch.cat([_.unsqueeze(1) for _ in seq], 1), torch.cat([_.unsqueeze(1) for _ in seqLogprobs], 1)
