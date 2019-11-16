@@ -343,7 +343,7 @@ epoch = 0
 print('Evaluating ... ')
 result_all = val()
 print(type(result_all))
-print(type(result_all[0]))
+print(result_all[0][0])
 # results = result_all.detach().numpy()
 
 json.dump(result_all, open('Per_greedy.json', 'w'))
