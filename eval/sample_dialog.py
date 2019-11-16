@@ -269,7 +269,7 @@ def val():
 
             for j in range(batch_size):
                 save_tmp[j].append({'ques':ques_txt[j], 'gt_ans':ans_txt[j], \
-                            'sample_ans':ans_sample_txt[j], 'rnd':rnd, 'img_id':img_id[j].detach().numpy()})
+                            'sample_ans':ans_sample_txt[j], 'rnd':rnd, 'img_id':img_id[j].item()})
         i += 1
         bar.update(i)
 
