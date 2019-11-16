@@ -79,6 +79,9 @@ if opt.model_path != '':
     opt.batchSize = 5
     opt.data_dir = data_dir
     opt.model_path = model_path
+    opt.input_img_h5 = input_img_h5
+    opt.input_ques_h5 = input_ques_h5
+    opt.input_json = input_json
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
