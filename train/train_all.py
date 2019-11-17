@@ -93,7 +93,7 @@ from misc.netG import _netG
 import datetime
 from script.test_data import check_data
 
-opt.manualSeed = random.randint(1, 10000) # fix seed
+opt.manualSeed = 42
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
