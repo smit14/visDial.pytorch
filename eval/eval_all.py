@@ -123,7 +123,7 @@ if model_path !='':
 print('init Generative model...')
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 netW_g = model._netW(vocab_size, opt.ninp, opt.dropout)
-netG = _netG(opt.model, vocab_size, opt.ninp, opt.nhid, opt.nlayers, opt.dropout)
+netG = _netG(opt.model, vocab_size, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, False)
 sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
