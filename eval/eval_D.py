@@ -37,6 +37,7 @@ parser.add_argument('--input_json', default='visdial_params.json', help='visdial
 parser.add_argument('--model_path', default='../script/save/dis/epoch_12.pth', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--path_to_home',type=str)
+parser.add_argument('--log_iter', default = 20, type = int, help='Log output after this many iterations')
 
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
@@ -212,7 +213,7 @@ def eval():
 
         result_all += save_tmp
 
-        if i % 50 == 0:
+        if i % opt.log_iter == 0:
             R1 = np.sum(np.array(rank_all_tmp)==1) / float(len(rank_all_tmp))
             R5 =  np.sum(np.array(rank_all_tmp)<=5) / float(len(rank_all_tmp))
             R10 = np.sum(np.array(rank_all_tmp)<=10) / float(len(rank_all_tmp))
@@ -274,6 +275,8 @@ fake_len = Variable(fake_len)
 noise_input = Variable(noise_input)
 batch_sample_idx = Variable(batch_sample_idx)
 gt_index = Variable(gt_index)
+
+output_obj = {}
 
 rank_all = eval()
 
