@@ -4,9 +4,33 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import random
 import pdb
+import logging
+import datetime
+import os
 """
 Some utility Functions.
 """
+def get_eval_logger(caller_file, model_path):
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    logger = logging.getLogger(caller_file+'_logger')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.INFO)
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+
+    t = datetime.datetime.now()
+    cur_time = '%s-%s-%s' % (t.day, t.month, t.hour)
+
+    filename = os.path.join(os.path.dirname(model_path), caller_file+'.log')
+    fh = logging.FileHandler(filename)
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    return logger
+
 
 def repackage_hidden_volatile(h):
     if type(h) == torch.Tensor:

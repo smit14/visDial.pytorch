@@ -34,13 +34,16 @@ parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
 parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
 parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
 
-parser.add_argument('--model_path', default='../script/save/dis/epoch_12.pth', help='folder to output images and model checkpoints')
-parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
-parser.add_argument('--path_to_home',type=str)
-parser.add_argument('--log_iter', default = 20, type = int, help='Log output after this many iterations')
+parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
+parser.add_argument('--cuda', action='store_true', help='enables cuda')
+parser.add_argument('--log_iter', type=int, default=1)
 
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
+
+if(opt.model_path==''):
+    print('Model path required for evaluation')
+    exit(255)
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 if opt.cuda:
@@ -50,7 +53,7 @@ random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 
 
-from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
+from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt, get_eval_logger
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
@@ -67,24 +70,26 @@ if torch.cuda.is_available() and not opt.cuda:
 # Data Loader
 ####################################################################################
 
-if opt.model_path != '':
-    print("=> loading checkpoint '{}'".format(opt.model_path))
-    checkpoint = torch.load(opt.model_path)
-    model_path = opt.model_path
-    data_dir = opt.data_dir
-    input_img_h5 = opt.input_img_h5
-    input_ques_h5 = opt.input_ques_h5
-    input_json = opt.input_json
-    prev_log_iter = opt.log_iter
-    opt = checkpoint['opt']
-    opt.start_epoch = checkpoint['epoch']
-    opt.batchSize = 64
-    opt.data_dir = data_dir
-    opt.model_path = model_path
-    opt.input_img_h5 = input_img_h5
-    opt.input_ques_h5 = input_ques_h5
-    opt.input_json = input_json
-    opt.log_iter = prev_log_iter
+
+print("=> loading checkpoint '{}'".format(opt.model_path))
+checkpoint = torch.load(opt.model_path, map_location=torch.device('cpu'))
+model_path = opt.model_path
+data_dir = opt.data_dir
+input_img_h5 = opt.input_img_h5
+input_ques_h5 = opt.input_ques_h5
+input_json = opt.input_json
+prev_log_iter = opt.log_iter
+opt = checkpoint['opt']
+opt.start_epoch = checkpoint['epoch']
+opt.batchSize = 5
+opt.data_dir = data_dir
+opt.model_path = model_path
+opt.input_img_h5 = input_img_h5
+opt.input_ques_h5 = input_ques_h5
+opt.input_json = input_json
+opt.log_iter = prev_log_iter
+
+logger = get_eval_logger(os.path.splitext(os.path.basename(__file__))[0], opt.model_path)
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
@@ -114,11 +119,11 @@ netW = model._netW(n_words, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, n_words, opt.dropout)
 critD = model.nPairLoss(opt.nhid, 2)
 
-if opt.model_path != '': # load the pre-trained model.
-    netW.load_state_dict(checkpoint['netW'])
-    netE.load_state_dict(checkpoint['netE'])
-    netD.load_state_dict(checkpoint['netD'])
-    print('Loading model Success!')
+
+netW.load_state_dict(checkpoint['netW'])
+netE.load_state_dict(checkpoint['netE'])
+netD.load_state_dict(checkpoint['netD'])
+print('Loading model Success!')
 
 if opt.cuda: # ship to cuda, if has GPU
     netW.cuda(), netE.cuda(), netD.cuda()
@@ -241,7 +246,7 @@ def eval():
             R10 = np.sum(np.array(rank_all_tmp)<=10) / float(len(rank_all_tmp))
             ave = np.sum(np.array(rank_all_tmp)) / float(len(rank_all_tmp))
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
-            print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
+            logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
     return (rank_all_tmp, result_all)
 
@@ -298,8 +303,6 @@ noise_input = Variable(noise_input)
 batch_sample_idx = Variable(batch_sample_idx)
 gt_index = Variable(gt_index)
 
-output_obj = {}
-
 rank_all, result_all = eval()
 
 R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
@@ -307,6 +310,7 @@ R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
 R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
 ave = np.sum(np.array(rank_all)) / float(len(rank_all))
 mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
-print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+logger.warning('Final result: ')
+logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
 print(result_all)
 json.dump(result_all, open('top_10_disc.json', 'w'))
