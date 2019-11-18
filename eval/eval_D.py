@@ -77,7 +77,7 @@ if opt.model_path != '':
     input_json = opt.input_json
     opt = checkpoint['opt']
     opt.start_epoch = checkpoint['epoch']
-    opt.batchSize = 5
+    opt.batchSize = 64
     opt.data_dir = data_dir
     opt.model_path = model_path
     opt.input_img_h5 = input_img_h5
@@ -159,7 +159,7 @@ def eval():
             #todo: remove this hard coded rnd = 5 after verifying!
             # rnd=5
             # get the corresponding round QA and history.
-            ques = question[:,rnd,:].t()
+            ques, tans = question[:,rnd,:].t(), answerT[:, rnd, :].t()
             his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
 
             opt_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
@@ -205,9 +205,29 @@ def eval():
             gt_score = score.view(-1).index_select(0, gt_index)
             sort_score, sort_idx = torch.sort(score, 1, descending=True)
 
+            opt_answer_cur_ques = opt_answerT.detach().numpy()[:, rnd, :, :] #5, 100, 9
+            top_10_sort_idx = sort_idx.detach().numpy()[:, 0:10]
+            first_dim_indices = np.broadcast_to(np.arange(batch_size).reshape(batch_size,1),(batch_size,10)).reshape(batch_size*10)
+            top_10_ans_word_indices = opt_answer_cur_ques[first_dim_indices, top_10_sort_idx.reshape(batch_size*10), :].reshape(batch_size, 10, 9)
+            top_10_ans_txt_rank_wise = [] #10, 5 as strings
+
+            ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
+            ans_txt = decode_txt(itow, tans)
+
+            for pos in range(10):
+                top_10_temp = decode_txt(itow, torch.tensor(top_10_ans_word_indices[:, pos, :]).t())
+                top_10_ans_txt_rank_wise.append(top_10_temp)
+
+            top_10_ans_txt = np.array(top_10_ans_txt_rank_wise, dtype=str).T
+
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
+            gt_rank_cpu = rank.view(-1).data.cpu().numpy()
             rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
+
+            for b in range(batch_size):
+                save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_10_ans_txt.tolist()[b],
+                                    "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item()})
 
         i += 1
 
@@ -221,7 +241,7 @@ def eval():
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
             print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
-    return rank_all_tmp
+    return (rank_all_tmp, result_all)
 
 ####################################################################################
 # Main
@@ -278,11 +298,13 @@ gt_index = Variable(gt_index)
 
 output_obj = {}
 
-rank_all = eval()
+rank_all, result_all = eval()
 
 R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
 R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
 R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
 ave = np.sum(np.array(rank_all)) / float(len(rank_all))
 mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
-print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(len(dataloader_val), len(dataloader_val), mrr, R1, R5, R10, ave))
+print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+print(result_all)
+json.dump(result_all, open('top_10_disc.json', 'w'))
