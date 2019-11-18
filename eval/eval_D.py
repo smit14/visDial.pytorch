@@ -75,6 +75,7 @@ if opt.model_path != '':
     input_img_h5 = opt.input_img_h5
     input_ques_h5 = opt.input_ques_h5
     input_json = opt.input_json
+    prev_log_iter = opt.log_iter
     opt = checkpoint['opt']
     opt.start_epoch = checkpoint['epoch']
     opt.batchSize = 64
@@ -83,6 +84,7 @@ if opt.model_path != '':
     opt.input_img_h5 = input_img_h5
     opt.input_ques_h5 = input_ques_h5
     opt.input_json = input_json
+    opt.log_iter = prev_log_iter
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
