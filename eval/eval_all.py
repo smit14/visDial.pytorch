@@ -22,13 +22,13 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
-import misc.dataLoader as dl
-import misc.model as model
-from misc.encoder_QIH import _netE
-import datetime
-from misc.netG import _netG
+# from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
+#                     decode_txt, sample_batch_neg, l2_norm
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
+# import datetime
+# from misc.netG import _netG
 
 parser = argparse.ArgumentParser()
 
@@ -38,11 +38,22 @@ parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_
 parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
+parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
+sys.path.insert(1, opt.path_to_home)
 
 print(opt)
-opt.manualSeed = 111 #random.randint(1, 10000) # fix seed
+
+from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+                    decode_txt, sample_batch_neg, l2_norm
+import misc.dataLoader as dl
+import misc.model as model
+from misc.encoder_QIH import _netE
+import datetime
+from misc.netG import _netG
+
+opt.manualSeed = 42 #random.randint(1, 10000) # fix seed
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
@@ -72,6 +83,9 @@ if opt.model_path != '':
     opt.batchSize = 5
     opt.data_dir = data_dir
     opt.model_path = model_path
+    opt.input_img_h5 = input_img_h5
+    opt.input_ques_h5 = input_ques_h5
+    opt.input_json = input_json
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
@@ -94,6 +108,17 @@ his_length = dataset_val.ans_length + dataset_val.ques_length
 itow = dataset_val.itow
 img_feat_size = 512
 
+print('init Discriminator model...')
+netE_d = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
+netW_d = model._netW(vocab_size, opt.ninp, opt.dropout)
+netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
+critD =model.nPairLoss(opt.ninp, opt.margin)
+
+if model_path !='':
+    print('Loading Discriminator model...')
+    netW_d.load_state_dict(checkpoint['netW_d'])
+    netE_d.load_state_dict(checkpoint['netE_d'])
+    netD.load_state_dict(checkpoint['netD'])
 
 print('init Generative model...')
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
@@ -103,11 +128,11 @@ sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
 
-if  opt.model_path_G != '':
+if  opt.model_path != '':
     print('Loading Generative model...')
-    netW_g.load_state_dict(checkpoint_G['netW_g'])
-    netE_g.load_state_dict(checkpoint_G['netE_g'])
-    netG.load_state_dict(checkpoint_G['netG'])
+    netW_g.load_state_dict(checkpoint['netW_g'])
+    netE_g.load_state_dict(checkpoint['netE_g'])
+    netG.load_state_dict(checkpoint['netG'])
 
 
 if opt.cuda: # ship to cuda, if has GPU
@@ -135,7 +160,7 @@ def val():
     count = 0
     i = 0
     rank_G = []
-
+    rank_D = []
     while i < len(dataloader_val):
         data = data_iter_val.next()
         image, history, question, answer, answerT, questionL, opt_answer, \
@@ -144,7 +169,9 @@ def val():
         batch_size = question.size(0)
         image = image.view(-1, 512)
 
-        img_input.data.resize_(image.size()).copy_(image)
+        with torch.no_grad():
+            img_input.resize_(image.size()).copy_(image)
+
         for rnd in range(10):
 
             # get the corresponding round QA and history.
@@ -156,11 +183,26 @@ def val():
             gt_id = answer_ids[:,rnd]
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
 
-            ques_input.data.resize_(ques.size()).copy_(ques)
-            his_input.data.resize_(his.size()).copy_(his)
-            opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
-            opt_ans_target.data.resize_(opt_tans.size()).copy_(opt_tans)
-            gt_index.data.resize_(gt_id.size()).copy_(gt_id)
+            his_input = torch.LongTensor(his.size()).cuda()
+            his_input.copy_(his)
+
+            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input.copy_(ques)
+
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input.copy_(opt_ans)
+
+            opt_ans_target = torch.LongTensor(opt_tans.size()).cuda()
+            opt_ans_target.copy_(opt_tans)
+
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index.copy_(gt_id)
+
+            # ques_input.data.resize_(ques.size()).copy_(ques)
+            # his_input.data.resize_(his.size()).copy_(his)
+            # opt_ans_input.data.resize_(opt_ans.size()).copy_(opt_ans)
+            # opt_ans_target.data.resize_(opt_tans.size()).copy_(opt_tans)
+            # gt_index.data.resize_(gt_id.size()).copy_(gt_id)
 
             ques_emb_g = netW_g(ques_input, format = 'index')
             his_emb_g = netW_g(his_input, format = 'index')
@@ -168,11 +210,11 @@ def val():
             ques_emb_d = netW_d(ques_input, format = 'index')
             his_emb_d = netW_d(his_input, format = 'index')
 
-            ques_hidden1 = repackage_hidden(ques_hidden1, batch_size)
-            ques_hidden2 = repackage_hidden(ques_hidden2, batch_size)
+            ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
+            ques_hidden2 = repackage_hidden_new(ques_hidden2, batch_size)
 
-            hist_hidden1 = repackage_hidden(hist_hidden1, his_emb_g.size(1))
-            hist_hidden2 = repackage_hidden(hist_hidden2, his_emb_d.size(1))
+            hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
+            hist_hidden2 = repackage_hidden_new(hist_hidden2, his_emb_d.size(1))
 
             featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
                                                 ques_hidden1, hist_hidden1, rnd+1)
@@ -210,10 +252,10 @@ def val():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_G += list(rank.view(-1).data.cuda().numpy())
+            rank_G += list(rank.view(-1).data.cpu().numpy())
 
             opt_ans_emb = netW_d(opt_ans_target, format = 'index')
-            opt_hidden = repackage_hidden(opt_hidden, opt_ans_target.size(1))
+            opt_hidden = repackage_hidden_new(opt_hidden, opt_ans_target.size(1))
             opt_feat = netD(opt_ans_emb, opt_ans_target, opt_hidden, vocab_size)
             opt_feat = opt_feat.view(batch_size, -1, opt.ninp)
 
@@ -226,7 +268,7 @@ def val():
             sort_score, sort_idx = torch.sort(score, 1, descending=True)
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
-            rank_D += list(rank.view(-1).data.cuda().numpy())
+            rank_D += list(rank.view(-1).data.cpu().numpy())
         i += 1
 
         if i % 50 == 0:
