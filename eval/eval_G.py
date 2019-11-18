@@ -33,19 +33,24 @@ parser = argparse.ArgumentParser()
 
 
 parser.add_argument('--data_dir', default='../script/data', help='folder to output images and model checkpoints')
-parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
-parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
-parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
+parser.add_argument('--input_img_h5', default='vdl_img_vgg_demo.h5', help='')
+parser.add_argument('--input_ques_h5', default='visdial_data_demo.h5', help='visdial_data.h5')
+parser.add_argument('--input_json', default='visdial_params_demo.json', help='visdial_params.json')
 
-parser.add_argument('--model_path', default='./epoch_12.pth', help='folder to output images and model checkpoints')
+parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
+
+if(opt.model_path==''):
+    print('Cannot run eval without giving model_path')
+    exit(255)
+
 sys.path.insert(1, opt.path_to_home)
 
 from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
+                    decode_txt, sample_batch_neg, l2_norm, get_eval_logger
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
@@ -65,22 +70,23 @@ cudnn.benchmark = True
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-if opt.model_path != '':
-    print("=> loading checkpoint '{}'".format(opt.model_path))
-    checkpoint = torch.load(opt.model_path)
-    model_path = opt.model_path
-    data_dir = opt.data_dir
-    input_img_h5 = opt.input_img_h5
-    input_ques_h5 = opt.input_ques_h5
-    input_json = opt.input_json
-    opt = checkpoint['opt']
-    opt.start_epoch = checkpoint['epoch']
-    opt.batchSize = 5
-    opt.data_dir = data_dir
-    opt.model_path = model_path
-    opt.input_img_h5 = input_img_h5
-    opt.input_ques_h5 = input_ques_h5
-    opt.input_json = input_json
+print("=> loading checkpoint '{}'".format(opt.model_path))
+checkpoint = torch.load(opt.model_path)
+model_path = opt.model_path
+data_dir = opt.data_dir
+input_img_h5 = opt.input_img_h5
+input_ques_h5 = opt.input_ques_h5
+input_json = opt.input_json
+opt = checkpoint['opt']
+opt.start_epoch = checkpoint['epoch']
+opt.batchSize = 5
+opt.data_dir = data_dir
+opt.model_path = model_path
+opt.input_img_h5 = input_img_h5
+opt.input_ques_h5 = input_ques_h5
+opt.input_json = input_json
+
+logger = get_eval_logger(os.path.splitext(os.path.basename(__file__))[0], opt.model_path)
 
 ####################################################################################
 # Data Loader
@@ -123,11 +129,11 @@ if opt.cuda:
     critG.cuda()
     sampler.cuda()
 
-if opt.model_path != '':
-    netW.load_state_dict(checkpoint['netW'])
-    netE.load_state_dict(checkpoint['netE'])
-    netG.load_state_dict(checkpoint['netG'])
-    print('Loading model Success!')
+
+netW.load_state_dict(checkpoint['netW'])
+netE.load_state_dict(checkpoint['netE'])
+netG.load_state_dict(checkpoint['netG'])
+print('Loading model Success!')
 
 def eval():
 
@@ -238,7 +244,11 @@ def eval():
             R10 = np.sum(np.array(rank_all_tmp)<=10) / float(len(rank_all_tmp))
             ave = np.sum(np.array(rank_all_tmp)) / float(len(rank_all_tmp))
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
-            print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+            logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
+
+
+        if(i==5):
+            break
 
     return rank_all_tmp
 
@@ -337,4 +347,4 @@ R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
 R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
 ave = np.sum(np.array(rank_all)) / float(len(rank_all))
 mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
-print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
