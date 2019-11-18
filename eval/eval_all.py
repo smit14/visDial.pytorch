@@ -154,7 +154,12 @@ def val():
 
     n_neg = 100
     ques_hidden1 = netE_g.init_hidden(opt.batchSize)
+    ques_hidden2 = netE_d.init_hidden(opt.batchSize)
+
+    hist_hidden1 = netE_d.init_hidden(opt.batchSize)
     hist_hidden2 = netE_g.init_hidden(opt.batchSize)
+
+    opt_hidden = netD.init_hidden(opt.batchSize)
     data_iter_val = iter(dataloader_val)
 
     count = 0
