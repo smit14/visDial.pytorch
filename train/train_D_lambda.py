@@ -164,7 +164,7 @@ netE = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_s
 netW = model._netW(vocab_size, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
 critD = model.nPairLoss(opt.ninp, opt.margin)
-feat2score = model.feat_to_score()
+feat2score = model.feat_to_score_and_norm()
 
 if opt.model_path != '':  # load the pre-trained model.
     netW.load_state_dict(checkpoint['netW'])
