@@ -282,6 +282,9 @@ def val():
             rank_D += list(rank.view(-1).data.cpu().numpy())
         i += 1
 
+        sys.stdout.write('Evaluating: {:d}/{:d}  \r' \
+                         .format(i, len(dataloader_val)))
+
         if i % 50 == 0:
             R1 = np.sum(np.array(rank_G)==1) / float(len(rank_G))
             R5 =  np.sum(np.array(rank_G)<=5) / float(len(rank_G))
