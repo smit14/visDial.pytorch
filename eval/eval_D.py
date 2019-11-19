@@ -37,7 +37,7 @@ parser.add_argument('--input_json', default='visdial_params.json', help='visdial
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--log_iter', type=int, default=1)
-
+parser.add_argument('--path_to_home',type=str)
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
 
