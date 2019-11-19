@@ -3,6 +3,7 @@ import argparse
 import os
 import random
 import sys
+
 sys.path.append(os.getcwd())
 
 import pdb
@@ -32,19 +33,23 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../script/old_data/vdl_img_vgg.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='../script/old_data/visdial_data.h5', help='path to dataset, now hdf5 file')
-parser.add_argument('--input_json', default='../script/old_data/visdial_params.json', help='path to dataset, now hdf5 file')
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5',
+                    help='path to dataset, now hdf5 file')
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5',
+                    help='path to dataset, now hdf5 file')
+parser.add_argument('--input_json', default='../script/data/visdial_params.json',
+                    help='path to dataset, now hdf5 file')
 parser.add_argument('--outf', default='./save', help='folder to output images and model checkpoints')
 parser.add_argument('--encoder', default='QIH_G', help='what encoder to use.')
 parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
 parser.add_argument('--update_D', action='store_true', help='whether train use the GAN loss.')
 parser.add_argument('--update_LM', action='store_true', help='whether train use the GAN loss.')
 
-#parser.add_argument('--model_path', default='save/QIH_perceptual.1-5-21/epoch_8.pth', help='folder to output images and model checkpoints')
-#parser.add_argument('--model_path', default='save/GAN_0.4.9-5-12/epoch_5.pth', help='folder to output images and model checkpoints')
-#parser.add_argument('--model_path', default='save/G/epoch_30.pth', help='folder to output images and model checkpoints')
-parser.add_argument('--model_path', default='../script/save/HCIAE-G-MLE.pth', help='folder to output images and model checkpoints')
+# parser.add_argument('--model_path', default='save/QIH_perceptual.1-5-21/epoch_8.pth', help='folder to output images and model checkpoints')
+# parser.add_argument('--model_path', default='save/GAN_0.4.9-5-12/epoch_5.pth', help='folder to output images and model checkpoints')
+# parser.add_argument('--model_path', default='save/G/epoch_30.pth', help='folder to output images and model checkpoints')
+parser.add_argument('--model_path', default='./epoch_12.pth',
+                    help='folder to output images and model checkpoints')
 
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
 parser.add_argument('--neg_batch_sample', type=int, default=30, help='folder to output images and model checkpoints')
@@ -64,10 +69,9 @@ parser.add_argument('--G_lr', type=float, default=1e-4, help='learning rate for,
 parser.add_argument('--LM_lr', type=float, default=4e-5, help='learning rate for, default=0.00005')
 parser.add_argument('--beta1', type=float, default=0.8, help='beta1 for adam. default=0.8')
 
-
-parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
-parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--verbose'  , action='store_true', help='show the sampled caption')
+parser.add_argument('--cuda', action='store_true', help='enables cuda')
+parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
+parser.add_argument('--verbose', action='store_true', help='show the sampled caption')
 
 parser.add_argument('--hidden_size', type=int, default=512, help='input batch size')
 parser.add_argument('--model', type=str, default='LSTM', help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU)')
@@ -78,34 +82,30 @@ parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--gumble_weight', type=int, default=0.3, help='folder to output images and model checkpoints')
-parser.add_argument('--path_to_home',type=str)
+parser.add_argument('--path_to_home', type=str)
 parser.add_argument('--evalall',type=str)
 
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
 print(opt)
 
-print('###################################################### ')
-print('#            You are running old model               # ')
-print('###################################################### ')
-
 # json output path
 pth = os.path.split(opt.model_path)
 tail = pth[1]
 tail2 = tail[:-4]
-json_path = tail2+'_old_dialog.json'
+json_path = tail2+'_new_dialog.json'
 print('output will be dumped to: '+ json_path )
 
 
 from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
+    decode_txt, sample_batch_neg, l2_norm
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
 
-opt.manualSeed = random.randint(1, 10000) # fix seed
+opt.manualSeed = random.randint(1, 10000)  # fix seed
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
@@ -121,18 +121,17 @@ if torch.cuda.is_available() and not opt.cuda:
 if opt.model_path != '':
     checkpoint = torch.load(opt.model_path)
 
-
 batch_size = 30
 ####################################################################################
 # Data Loader
 ####################################################################################
 
 dataset_val = dl.validate(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
-                input_json=opt.input_json, negative_sample = opt.negative_sample,
-                num_val = opt.num_val, data_split = 'test')
+                          input_json=opt.input_json, negative_sample=opt.negative_sample,
+                          num_val=opt.num_val, data_split='test')
 
 dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=batch_size,
-                                         shuffle=False, num_workers=0)
+                                             shuffle=False, num_workers=0)
 
 ####################################################################################
 # Build the Model
@@ -163,13 +162,13 @@ else:
     netE_g.load_state_dict(checkpoint['netE_g'])
     netG.load_state_dict(checkpoint['netG'])
 
-
-if opt.cuda: # ship to cuda, if has GPU
+if opt.cuda:  # ship to cuda, if has GPU
     netW_g.cuda()
     netE_g.cuda()
     netG.cuda()
     critG.cuda()
     sampler.cuda(), critLM.cuda()
+
 
 ####################################################################################
 # training model
@@ -196,7 +195,7 @@ def val():
     while i < len(dataloader_val):
         data = data_iter_val.next()
         image, history, question, answer, answerT, questionL, opt_answer, \
-                    opt_answerT, answer_ids, answerLen, opt_answerLen, img_id  = data
+        opt_answerT, answer_ids, answerLen, opt_answerLen, img_id = data
 
         batch_size = question.size(0)
         image = image.view(-1, 512)
@@ -207,13 +206,13 @@ def val():
         for rnd in range(10):
 
             # get the corresponding round QA and history.
-            ques, tans = question[:,rnd,:].t(), answerT[:,rnd,:].t()
-            his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
+            ques, tans = question[:, rnd, :].t(), answerT[:, rnd, :].t()
+            his = history[:, :rnd + 1, :].clone().view(-1, his_length).t()
 
-            opt_ans = opt_answer[:,rnd,:,:].clone().view(-1, ans_length).t()
-            opt_tans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
-            gt_id = answer_ids[:,rnd]
-            opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
+            opt_ans = opt_answer[:, rnd, :, :].clone().view(-1, ans_length).t()
+            opt_tans = opt_answerT[:, rnd, :].clone().view(-1, ans_length).t()
+            gt_id = answer_ids[:, rnd]
+            opt_len = opt_answerLen[:, rnd, :].clone().view(-1)
 
             ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
@@ -230,35 +229,35 @@ def val():
             gt_index = torch.LongTensor(gt_id.size())
             gt_index.copy_(gt_id)
 
-            ques_emb_g = netW_g(ques_input, format = 'index')
-            his_emb_g = netW_g(his_input, format = 'index')
+            ques_emb_g = netW_g(ques_input, format='index')
+            his_emb_g = netW_g(his_input, format='index')
 
             ques_hidden1 = repackage_hidden_new(ques_hidden1, batch_size)
 
             hist_hidden1 = repackage_hidden_new(hist_hidden1, his_emb_g.size(1))
 
             featG, ques_hidden1 = netE_g(ques_emb_g, his_emb_g, img_input, \
-                                                ques_hidden1, hist_hidden1, rnd+1)
+                                         ques_hidden1, hist_hidden1, rnd + 1)
 
-            #featD = l2_norm(featD)
+            # featD = l2_norm(featD)
             # Evaluate the Generator:
-            _, ques_hidden1 = netG(featG.view(1,-1,opt.ninp), ques_hidden1)
-            #_, ques_hidden = netG(encoder_feat.view(1,-1,opt.ninp), ques_hidden)
+            _, ques_hidden1 = netG(featG.view(1, -1, opt.ninp), ques_hidden1)
+            # _, ques_hidden = netG(encoder_feat.view(1,-1,opt.ninp), ques_hidden)
             # extend the hidden
             sample_ans_input = torch.LongTensor(1, opt.batchSize).cuda()
             sample_ans_input.resize_((1, batch_size)).fill_(vocab_size)
-            
-            sample_opt = {'beam_size':1}
+
+            sample_opt = {'beam_size': 1}
 
             seq, seqLogprobs = netG.sample(netW_g, sample_ans_input, ques_hidden1, sample_opt)
             ans_sample_txt = decode_txt(itow, seq.t())
             ans_txt = decode_txt(itow, tans)
-            ques_txt = decode_txt(itow, questionL[:,rnd,:].t())
-            
+            ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
+
             '''
             for j in range(len(ans_txt)):
                 print('Q: %s --A: %s --Sampled: %s' %(ques_txt[j], ans_txt[j], ans_sample_txt[j]))
-            
+
             ans_sample_z = [[] for z in range(batch_size)]
             for m in range(5):
                 ans_sample_result = torch.Tensor(ans_length, batch_size)
@@ -282,19 +281,20 @@ def val():
                     ans_sample_z[ii].append(ans_sample_txt[ii])
             '''
             ans_txt = decode_txt(itow, tans)
-            ques_txt = decode_txt(itow, questionL[:,rnd,:].t())
-            #for j in range(len(ans_txt)):
+            ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
+            # for j in range(len(ans_txt)):
             #    print('Q: %s --A: %s --Sampled: %s' %(ques_txt[j], ans_txt[j], ans_sample_txt[j]))
 
             for j in range(batch_size):
-                save_tmp[j].append({'ques':ques_txt[j], 'gt_ans':ans_txt[j], \
-                            'sample_ans':ans_sample_txt[j], 'rnd':rnd, 'img_id':img_id[j].item()})
+                save_tmp[j].append({'ques': ques_txt[j], 'gt_ans': ans_txt[j], \
+                                    'sample_ans': ans_sample_txt[j], 'rnd': rnd, 'img_id': img_id[j].item()})
         i += 1
         bar.update(i)
 
         result_all += save_tmp
 
     return result_all
+
 
 ####################################################################################
 # Main
@@ -357,9 +357,8 @@ opt_ans_input = Variable(opt_ans_input)
 opt_ans_target = Variable(opt_ans_target)
 gt_index = Variable(gt_index)
 
-
 epoch = 0
 print('Evaluating ... ')
 result_all = val()
 
-json.dump(result_all, open(json_path, 'w'))
+json.dump(result_all, open('Per_greedy_new.json', 'w'))
