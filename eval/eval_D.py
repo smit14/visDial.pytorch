@@ -244,7 +244,7 @@ def eval():
             for b in range(batch_size):
                 save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_10_ans_txt.tolist()[b],
                                     "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item(),
-                                    "top_10_scores": sort_score_cpu[b][:10]})
+                                    "top_10_scores": sort_score_cpu[b][:10].tolist()})
 
         i += 1
 
@@ -258,6 +258,8 @@ def eval():
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
             logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
+        if(i==2):
+            break
     return (rank_all_tmp, result_all)
 
 ####################################################################################
