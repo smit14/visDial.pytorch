@@ -116,8 +116,8 @@ if opt.model_path != '':
     print("=> loading checkpoint '{}'".format(opt.model_path))
     checkpoint = torch.load(opt.model_path)
     model_path = opt.model_path
-    opt.start_epoch = checkpoint['epoch']
     opt = checkpoint['opt']
+    opt.start_epoch = checkpoint['epoch']
     opt.model_path = model_path
     save_path = opt.save_path
 else:
