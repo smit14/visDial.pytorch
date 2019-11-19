@@ -41,6 +41,11 @@ parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
+
+if(opt.model_path==''):
+    print('Cannot run eval without providing model_path')
+    exit(255)
+
 sys.path.insert(1, opt.path_to_home)
 
 print(opt)
