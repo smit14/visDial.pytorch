@@ -246,10 +246,6 @@ def eval():
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
             logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
-
-        if(i==5):
-            break
-
     return rank_all_tmp
 
 
