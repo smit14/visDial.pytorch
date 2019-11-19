@@ -148,7 +148,7 @@ class nPairLoss(nn.Module):
         self.margin = np.log(margin)
 
     def forward(self, combined, negative_samples, batch_negative_samples):
-        print(combined.size())
+        # print(combined.size())
         batch_size = combined.size(0)
         total_ans = combined.size(1)
 
