@@ -431,7 +431,7 @@ optimizer = optim.Adam([{'params': netW.parameters()},
 
 history = []
 
-for epoch in range(1, opt.niter):
+for epoch in range(opt.start_epoch+1, opt.niter):
 
     t = time.time()
     train_loss, lr = train(epoch)
