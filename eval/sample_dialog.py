@@ -79,10 +79,23 @@ parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--gumble_weight', type=int, default=0.3, help='folder to output images and model checkpoints')
 parser.add_argument('--path_to_home',type=str)
+parser.add_argument('--evalall',type=str)
 
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
 print(opt)
+
+print('###################################################### ')
+print('#            You are running old model               # ')
+print('###################################################### ')
+
+# json output path
+pth = os.path.split(opt.model_path)
+tail = pth[1]
+tail2 = tail[:-4]
+json_path = tail2+'_old_dialog.json'
+print('output will be dumped to: '+ json_path )
+
 
 from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, \
                     decode_txt, sample_batch_neg, l2_norm
@@ -139,11 +152,17 @@ sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
 
-if True:# opt.model_path_D != '' and opt.model_path_G != '':
+if opt.evalall==False:# opt.model_path_D != '' and opt.model_path_G != '':
     print('Loading Generative model...')
     netW_g.load_state_dict(checkpoint['netW'])
     netE_g.load_state_dict(checkpoint['netE'])
     netG.load_state_dict(checkpoint['netG'])
+else:
+    print('Loading Generative model...')
+    netW_g.load_state_dict(checkpoint['netW_g'])
+    netE_g.load_state_dict(checkpoint['netE_g'])
+    netG.load_state_dict(checkpoint['netG'])
+
 
 if opt.cuda: # ship to cuda, if has GPU
     netW_g.cuda()
@@ -343,4 +362,4 @@ epoch = 0
 print('Evaluating ... ')
 result_all = val()
 
-json.dump(result_all, open('Per_greedy.json', 'w'))
+json.dump(result_all, open(json_path, 'w'))
