@@ -62,6 +62,7 @@ parser.add_argument('--D_lr', type=float, default=5e-5, help='learning rate for,
 parser.add_argument('--G_lr', type=float, default=5e-5, help='learning rate for, default=0.00005')
 parser.add_argument('--LM_lr', type=float, default=5e-5, help='learning rate for, default=0.00005')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.8')
+parser.add_argument('--alpha', type=float, default=0.5, help='alpha for LM loss multuplier')
 
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
@@ -307,6 +308,8 @@ def train(epoch):
                 logprob, _ = netG(ans_emb, ques_hidden1)
                 lm_loss = critLM(logprob, ans_target.view(-1, 1))
                 lm_loss = lm_loss / torch.sum(ans_target.data.gt(0))
+                # total loss = discriminator_loss + alpha*lm_loss
+                lm_loss = opt.alpha*lm_loss
 
                 netW_g.zero_grad()
                 netG.zero_grad()
