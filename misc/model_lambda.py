@@ -155,9 +155,9 @@ class nPairLoss(nn.Module):
         #rank
         (sorted_score, sorted_idx) = combined.sort(dim=1,descending=True)
 
-        assignment = torch.arange(total_ans).reshape(1, total_ans).expand(batch_size, total_ans)
+        assignment = torch.arange(total_ans).reshape(1, total_ans).expand(batch_size, total_ans).cuda()
         row_idx = torch.arange(batch_size).reshape(batch_size, 1).expand(batch_size, total_ans).reshape(
-            total_ans * batch_size)
+            total_ans * batch_size).cuda()
         col_idx = sorted_idx.reshape(-1)
         rank = torch.LongTensor(batch_size * total_ans)
         flattened_idx = row_idx * total_ans + col_idx
