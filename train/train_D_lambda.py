@@ -269,7 +269,7 @@ def train(epoch):
 
             # All the correct answers are persent at the begining of the combined_scores
             combined_scores, l2_norm = feat2score(featD, real_feat, wrong_feat, batch_wrong_feat) # (batch_size, 1 + n_s + n_b_s)
-            lambs, nPairLoss = critD(combined_scores)
+            lambs, nPairLoss = critD(combined_scores,opt.negative_sample,opt.neg_batch_sample )
 
             average_loss += nPairLoss.data.item()
             l2_norm.backward(retain_graph=True)
