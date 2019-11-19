@@ -166,7 +166,7 @@ class nPairLoss(nn.Module):
 
         score_diff = combined[:,:1] - combined[:,1:].view(batch_size,total_ans-1)
         exped = score_diff.exp()
-        mrr_dif = 1/rank[:,:1].double() - 1/rank[:,1:].view(batch_size,total_ans-1).double()
+        mrr_dif = 1/rank[:,:1].float() - 1/rank[:,1:].view(batch_size,total_ans-1).float()
 
         # lamb updates
         lamb_updates = (-1/(1 + exped)) * mrr_dif.abs()
