@@ -188,8 +188,10 @@ class nPairLoss(nn.Module):
         return lambs, loss
 
 class feat_to_score_and_norm(nn.Module):
-    def __init__(self):
+    def __init__(self,ninp, margin):
         super(feat_to_score_and_norm, self).__init__()
+        self.ninp = ninp
+        self.margin = np.log(margin)
 
     def forward(self, feat, right, wrong, batch_wrong):
         num_wrong = wrong.size(1)
