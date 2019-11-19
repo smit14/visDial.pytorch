@@ -30,23 +30,26 @@ from torch.autograd import Variable
 from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
     decode_txt, sample_batch_neg, l2_norm
 
-import misc.dataLoader as dl
-import misc.model_lambda as model
-from misc.encoder_QIH import _netE
+# from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+#                     decode_txt, sample_batch_neg, l2_norm
+#
+# import misc.dataLoader as dl
+# import misc.model as model
+# from misc.encoder_QIH import _netE
 import datetime
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg_demo.h5',
+parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5',
                     help='path to image feature, now hdf5 file')
-parser.add_argument('--input_ques_h5', default='../script/data/visdial_data_demo.h5',
+parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5',
                     help='path to label, now hdf5 file')
-parser.add_argument('--input_json', default='../script/data/visdial_params_demo.json',
+parser.add_argument('--input_json', default='../script/data/visdial_params.json',
                     help='path to dataset, now json file')
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=100, help='number of image split out as validation set.')
+parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
@@ -55,7 +58,7 @@ parser.add_argument('--start_epoch', type=int, default=1, help='start of epochs 
 parser.add_argument('--teacher_forcing', type=int, default=1, help='start of epochs to train for')
 
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=6)
-parser.add_argument('--batchSize', type=int, default=100, help='input batch size')
+parser.add_argument('--batchSize', type=int, default=128, help='input batch size')
 parser.add_argument('--save_iter', type=int, default=5, help='number of epochs to train for')
 
 parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
@@ -74,10 +77,28 @@ parser.add_argument('--nlayers', type=int, default=1, help='number of layers')
 parser.add_argument('--dropout', type=int, default=0.5, help='number of layers')
 parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
-parser.add_argument('--log_interval', type=int, default=1, help='how many iterations show the log info')
+parser.add_argument('--log_interval', type=int, default=5, help='how many iterations show the log info')
+parser.add_argument('--path_to_home',type=str)
 
 opt = parser.parse_args()
 print(opt)
+sys.path.insert(1, opt.path_to_home)
+
+from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
+                    decode_txt, sample_batch_neg, l2_norm
+
+import misc.dataLoader as dl
+import misc.model_lambda as model
+from misc.encoder_QIH import _netE
+from script.test_data import check_data
+
+# ---------------------- check for data correctnes -------------------------------------
+if check_data() == False:
+    print("data is not up-to-date")
+    exit(255)
+
+# ---------------------- -------------------------------------------------------
+
 
 opt.manualSeed = random.randint(1, 10000)  # fix seed
 print("Random Seed: ", opt.manualSeed)
@@ -98,11 +119,13 @@ if opt.model_path != '':
     opt.start_epoch = checkpoint['epoch']
     opt.model_path = model_path
     opt.batchSize = 1
+    save_path = opt.save_path
 else:
     # create new folder.
     t = datetime.datetime.now()
     cur_time = '%s-%s-%s' % (t.day, t.month, t.hour)
     save_path = os.path.join(opt.outf, opt.decoder + '.' + cur_time)
+    opt.save_path = save_path
     try:
         os.makedirs(save_path)
     except OSError:
@@ -149,9 +172,8 @@ if opt.model_path != '':  # load the pre-trained model.
     netD.load_state_dict(checkpoint['netD'])
 
 if opt.cuda:  # ship to cuda, if has GPU
-    netW.cpu(), netE.cpu(),
-    netD.cpu(), critD.cpu()
-
+    netW.cuda(), netE.cuda(),
+    netD.cuda(), critD.cuda()
 
 ####################################################################################
 # training model
@@ -203,23 +225,23 @@ def train(epoch):
             real_len = answerLen[:, rnd]
             wrong_len = opt_answerLen[:, rnd, :].clone().view(-1)
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            ans_input = torch.LongTensor(ans.size())
+            ans_input = torch.LongTensor(ans.size()).cuda()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size())
+            ans_target = torch.LongTensor(tans.size()).cuda()
             ans_target.copy_(tans)
 
-            wrong_ans_input = torch.LongTensor(wrong_ans.size())
+            wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
             wrong_ans_input.copy_(wrong_ans)
 
             # sample in-batch negative index
-            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long)
+            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
             sample_batch_neg(answerIdx[:, rnd], opt_answerIdx[:, rnd, :], batch_sample_idx, opt.neg_batch_sample)
 
             ques_emb = netW(ques_input, format='index')
@@ -304,16 +326,16 @@ def val():
             opt_ans = opt_answerT[:, rnd, :].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:, rnd]
 
-            ques_input = torch.LongTensor(ques.size())
+            ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size())
+            his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
-            opt_ans_input = torch.LongTensor(opt_ans.size())
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
             opt_ans_input.copy_(opt_ans)
 
-            gt_index = torch.LongTensor(gt_id.size())
+            gt_index = torch.LongTensor(gt_id.size()).cuda()
             gt_index.copy_(gt_id)
 
             opt_len = opt_answerLen[:, rnd, :].clone().view(-1)
@@ -376,17 +398,17 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
-    ans_input, ans_target = ans_input.cpu(), ans_target.cpu()
-    wrong_ans_input = wrong_ans_input.cpu()
-    sample_ans_input = sample_ans_input.cpu()
+    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
+    ans_input, ans_target = ans_input.cuda(), ans_target.cuda()
+    wrong_ans_input = wrong_ans_input.cuda()
+    sample_ans_input = sample_ans_input.cuda()
 
-    fake_len = fake_len.cpu()
-    noise_input = noise_input.cpu()
-    batch_sample_idx = batch_sample_idx.cpu()
-    fake_diff_mask = fake_diff_mask.cpu()
-    opt_ans_input = opt_ans_input.cpu()
-    gt_index = gt_index.cpu()
+    fake_len = fake_len.cuda()
+    noise_input = noise_input.cuda()
+    batch_sample_idx = batch_sample_idx.cuda()
+    fake_diff_mask = fake_diff_mask.cuda()
+    opt_ans_input = opt_ans_input.cuda()
+    gt_index = gt_index.cuda()
 
 ques_input = Variable(ques_input)
 img_input = Variable(img_input)
