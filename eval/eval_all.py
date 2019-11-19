@@ -75,22 +75,21 @@ if torch.cuda.is_available() and not opt.cuda:
 # Data Loader
 ####################################################################################
 
-if opt.model_path != '':
-    print("=> loading checkpoint '{}'".format(opt.model_path))
-    checkpoint = torch.load(opt.model_path)
-    model_path = opt.model_path
-    data_dir = opt.data_dir
-    input_img_h5 = opt.input_img_h5
-    input_ques_h5 = opt.input_ques_h5
-    input_json = opt.input_json
-    opt = checkpoint['opt']
-    opt.start_epoch = checkpoint['epoch']
-    opt.batchSize = 5
-    opt.data_dir = data_dir
-    opt.model_path = model_path
-    opt.input_img_h5 = input_img_h5
-    opt.input_ques_h5 = input_ques_h5
-    opt.input_json = input_json
+print("=> loading checkpoint '{}'".format(opt.model_path))
+checkpoint = torch.load(opt.model_path)
+model_path = opt.model_path
+data_dir = opt.data_dir
+input_img_h5 = opt.input_img_h5
+input_ques_h5 = opt.input_ques_h5
+input_json = opt.input_json
+opt = checkpoint['opt']
+opt.start_epoch = checkpoint['epoch']
+opt.batchSize = 5
+opt.data_dir = data_dir
+opt.model_path = model_path
+opt.input_img_h5 = input_img_h5
+opt.input_ques_h5 = input_ques_h5
+opt.input_json = input_json
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
@@ -119,11 +118,11 @@ netW_d = model._netW(vocab_size, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
 critD =model.nPairLoss(opt.ninp, opt.margin)
 
-if model_path !='':
-    print('Loading Discriminator model...')
-    netW_d.load_state_dict(checkpoint['netW_d'])
-    netE_d.load_state_dict(checkpoint['netE_d'])
-    netD.load_state_dict(checkpoint['netD'])
+
+print('Loading Discriminator model...')
+netW_d.load_state_dict(checkpoint['netW_d'])
+netE_d.load_state_dict(checkpoint['netE_d'])
+netD.load_state_dict(checkpoint['netD'])
 
 print('init Generative model...')
 netE_g = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
@@ -133,11 +132,11 @@ sampler = model.gumbel_sampler()
 critG = model.G_loss(opt.ninp)
 critLM = model.LMCriterion()
 
-if  opt.model_path != '':
-    print('Loading Generative model...')
-    netW_g.load_state_dict(checkpoint['netW_g'])
-    netE_g.load_state_dict(checkpoint['netE_g'])
-    netG.load_state_dict(checkpoint['netG'])
+
+print('Loading Generative model...')
+netW_g.load_state_dict(checkpoint['netW_g'])
+netE_g.load_state_dict(checkpoint['netE_g'])
+netG.load_state_dict(checkpoint['netG'])
 
 
 if opt.cuda: # ship to cuda, if has GPU
