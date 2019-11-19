@@ -33,9 +33,9 @@ parser = argparse.ArgumentParser()
 
 
 parser.add_argument('--data_dir', default='../script/data', help='folder to output images and model checkpoints')
-parser.add_argument('--input_img_h5', default='vdl_img_vgg_demo.h5', help='')
-parser.add_argument('--input_ques_h5', default='visdial_data_demo.h5', help='visdial_data.h5')
-parser.add_argument('--input_json', default='visdial_params_demo.json', help='visdial_params.json')
+parser.add_argument('--input_img_h5', default='vdl_img_vgg.h5', help='')
+parser.add_argument('--input_ques_h5', default='visdial_data.h5', help='visdial_data.h5')
+parser.add_argument('--input_json', default='visdial_params.json', help='visdial_params.json')
 
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
