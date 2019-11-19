@@ -38,7 +38,6 @@ parser.add_argument('--model_path', default='', help='folder to output images an
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--log_iter', type=int, default=1)
 parser.add_argument('--path_to_home',type=str)
-
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
 
@@ -59,6 +58,7 @@ if opt.cuda:
 print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
+
 
 from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt, get_eval_logger
 import misc.dataLoader as dl
@@ -241,7 +241,8 @@ def eval():
 
             for b in range(batch_size):
                 save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_10_ans_txt.tolist()[b],
-                                    "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item()})
+                                    "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item(),
+                                    "top_10_scores": sort_score[b][:10]})
 
         i += 1
 
