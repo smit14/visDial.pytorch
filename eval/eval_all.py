@@ -51,7 +51,7 @@ sys.path.insert(1, opt.path_to_home)
 print(opt)
 
 from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
-                    decode_txt, sample_batch_neg, l2_norm
+                    decode_txt, sample_batch_neg, l2_norm, get_eval_logger
 import misc.dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
@@ -90,6 +90,8 @@ opt.model_path = model_path
 opt.input_img_h5 = input_img_h5
 opt.input_ques_h5 = input_ques_h5
 opt.input_json = input_json
+
+logger = get_eval_logger(os.path.splitext(os.path.basename(__file__))[0], opt.model_path)
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
 input_ques_h5 = os.path.join(opt.data_dir, opt.input_ques_h5)
@@ -286,7 +288,7 @@ def val():
             R10 = np.sum(np.array(rank_G)<=10) / float(len(rank_G))
             ave = np.sum(np.array(rank_G)) / float(len(rank_G))
             mrr = np.sum(1/(np.array(rank_G, dtype='float'))) / float(len(rank_G))
-            print ('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+            logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
 
 
@@ -376,11 +378,11 @@ R5 =  np.sum(np.array(rank_G)<=5) / float(len(rank_G))
 R10 = np.sum(np.array(rank_G)<=10) / float(len(rank_G))
 ave = np.sum(np.array(rank_G)) / float(len(rank_G))
 mrr = np.sum(1/(np.array(rank_G, dtype='float'))) / float(len(rank_G))
-print ('Generator: %d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(epoch, len(dataloader_val), mrr, R1, R5, R10, ave))
+logger.warning('Generator: %d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(epoch, len(dataloader_val), mrr, R1, R5, R10, ave))
 
 R1 = np.sum(np.array(rank_D)==1) / float(len(rank_D))
 R5 =  np.sum(np.array(rank_D)<=5) / float(len(rank_D))
 R10 = np.sum(np.array(rank_D)<=10) / float(len(rank_D))
 ave = np.sum(np.array(rank_D)) / float(len(rank_D))
 mrr = np.sum(1/(np.array(rank_D, dtype='float'))) / float(len(rank_D))
-print ('Discriminator: %d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(epoch, len(dataloader_val), mrr, R1, R5, R10, ave))
+logger.warning('Discriminator: %d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(epoch, len(dataloader_val), mrr, R1, R5, R10, ave))
