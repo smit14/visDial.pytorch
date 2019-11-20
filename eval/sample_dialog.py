@@ -361,4 +361,4 @@ epoch = 0
 print('Evaluating ... ')
 result_all = val()
 
-json.dump(result_all, open('Per_greedy_new.json', 'w'))
+json.dump(result_all, open(json_path, 'w'))

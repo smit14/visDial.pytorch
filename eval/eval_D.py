@@ -244,7 +244,7 @@ def eval():
             for b in range(batch_size):
                 save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_10_ans_txt.tolist()[b],
                                     "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item(),
-                                    "top_10_scores": sort_score_cpu[b][:10]})
+                                    "top_10_scores": sort_score_cpu[b][:10].tolist()})
 
         i += 1
 
