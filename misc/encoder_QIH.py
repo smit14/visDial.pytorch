@@ -5,6 +5,7 @@ import pdb
 import math
 import numpy as np
 import torch.nn.functional as F
+from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 
 class _netE(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
@@ -18,9 +19,21 @@ class _netE(nn.Module):
         self.nlayers = nlayers
         self.ninp = ninp
         self.img_embed = nn.Linear(img_feat_size, nhid).cuda()
+        self.bert_feat_size = 768
 
         self.ques_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cuda()
         self.his_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cuda()
+
+        # Bert model
+        self.model = BertModel.from_pretrained('bert-base-uncased')
+        self.model.eval()
+        # Bert feature size: 768
+
+        self.Wb2q = nn.Linear(self.bert_feat_size, self.nhid).cuda()
+        self.Wb2h = nn.Linear(self.bert_feat_size, self.nhid).cuda()
+
+        self.Wb2qc = nn.Linear(self.bert_feat_size, self.nhid).cuda()
+        self.Wb2hc = nn.Linear(self.bert_feat_size, self.nhid).cuda()
 
         self.Wq_1 = nn.Linear(self.nhid, self.nhid).cuda()
         self.Wh_1 = nn.Linear(self.nhid, self.nhid).cuda()
@@ -33,15 +46,24 @@ class _netE(nn.Module):
 
         self.fc1 = nn.Linear(self.nhid*3, self.ninp).cuda()
 
-    def forward(self, ques_emb, his_emb, img_raw, ques_hidden, his_hidden, rnd):
+    def forward(self, ques_tokens_tensor, ques_segments_tensor, question_attention_mask, \
+                his_tokens_tensor, his_segments_tensor, his_attention_mask, img_raw, rnd):
 
         img_emb = F.tanh(self.img_embed(img_raw))
 
-        ques_feat, ques_hidden = self.ques_rnn(ques_emb, ques_hidden)
-        ques_feat = ques_feat[-1]
+        with torch.no_grad():
+            ques_feat, _ = self.model(ques_tokens_tensor,ques_segments_tensor,question_attention_mask)
+        ques_feat = torch.mean(ques_feat[11],1)
+        ques_c = self.Wb2qc(ques_feat)
+        ques_feat = self.Wb2q(ques_feat)
+        ques_hidden = (ques_feat, ques_c)
 
-        his_feat, his_hidden = self.his_rnn(his_emb, his_hidden)
-        his_feat = his_feat[-1]
+        with torch.no_grad():
+            his_feat, _ = self.model(his_tokens_tensor, his_segments_tensor,his_attention_mask)
+        his_feat = torch.mean(his_feat[11],1)
+        his_c = self.Wb2hc(his_feat)
+        his_feat = self.Wb2h(his_feat)
+        his_hidden = (his_feat, his_c)
 
         ques_emb_1 = self.Wq_1(ques_feat).view(-1, 1, self.nhid)
         his_emb_1 = self.Wh_1(his_feat).view(-1, rnd, self.nhid)

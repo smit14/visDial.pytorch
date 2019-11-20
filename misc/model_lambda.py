@@ -188,10 +188,11 @@ class nPairLoss(nn.Module):
         return lambs, loss
 
 class feat_to_score_and_norm(nn.Module):
-    def __init__(self,ninp, margin):
+    def __init__(self,ninp, margin,alpha_norm):
         super(feat_to_score_and_norm, self).__init__()
         self.ninp = ninp
         self.margin = np.log(margin)
+        self.alpha_norm = alpha_norm
 
     def forward(self, feat, right, wrong, batch_wrong):
         num_wrong = wrong.size(1)
@@ -207,6 +208,7 @@ class feat_to_score_and_norm(nn.Module):
         combined = torch.cat((right_dis, wrong_dis, batch_wrong_dis),dim=1)  # (batch_size, 1 + n_s + b_n_s, 1) # n_s : negatives samples , b_n_s: batch_negative_samples
         loss_norm = right.norm() + feat.norm() + wrong.norm() + batch_wrong.norm()
         loss_norm = loss_norm / batch_size
+        loss_norm = self.alpha_norm*loss_norm
         return combined.squeeze(), loss_norm
 
 class G_loss(nn.Module):

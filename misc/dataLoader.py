@@ -9,6 +9,7 @@ import json
 import pdb
 import random
 from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, decode_txt
+from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 
 
 class train(data.Dataset) :  # torch wrapper
@@ -78,10 +79,88 @@ class train(data.Dataset) :  # torch wrapper
         self.total_qa_pairs = 10
         self.negative_sample = negative_sample
 
+        # bert tokenzier
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.max_token_size = 100
+
     def __getitem__(self, index) :
         # get the image
         img = torch.from_numpy(self.imgs[index])
 
+        # decode text for question
+        ques_text = decode_txt(self.itow,
+                               torch.from_numpy(self.ques[index].T.astype(dtype='int32')))  # List of strings # len: 10
+
+        # decode text for history and caption
+        caption_text = decode_txt(self.itow, torch.from_numpy(self.cap[index:index + 1].T.astype(dtype='int32')))
+        ques_list = decode_txt(self.itow, torch.from_numpy(self.ques[index, :9].T.astype(dtype='int32')))
+        ans_list = decode_txt(self.itow, torch.from_numpy(self.ans[index, :9].T.astype(dtype='int32')))
+
+        # apply CLS SEP for question
+        ques_text = ['[CLS] ' + ques + ' [SEP]' for ques in ques_text]
+
+        # apply CLS SEP for caption
+        caption_text = '[CLS] ' + caption_text[0] + ' [SEP]'
+
+        # apply CLS SEP SEP for history
+        history_text = []
+        for i in range(9):
+            history_text.append('[CLS] ' + ques_list[i] + ' [SEP] ' + ans_list[i] + ' [SEP]')
+
+        # tokens for questions
+        ques_tokens = [self.tokenizer.tokenize(ques) for ques in ques_text]
+        ques_tokens_len = [len(ques_token) for ques_token in ques_tokens]
+
+        # tokens for captions
+        caption_tokens = self.tokenizer.tokenize(caption_text)
+        capiton_tokens_len = len(caption_tokens)
+
+        # tokens for history
+        history_tokens = [self.tokenizer.tokenize(his) for his in history_text]
+        history_tokens_len = [len(his_token) for his_token in history_tokens]
+
+        # token ids for question
+        question_token_ids = [self.tokenizer.convert_tokens_to_ids(x) for x in ques_tokens]
+
+        # token ids for caption and history
+        caption_token_ids = self.tokenizer.convert_tokens_to_ids(caption_tokens)
+        history_token_ids = [self.tokenizer.convert_tokens_to_ids(x) for x in history_tokens]
+
+        # add padding to question
+        # attention mask for question
+        question_array = np.zeros((10, self.max_token_size))
+        question_attention_array = np.ones((10, self.max_token_size))
+        for i in range(10):
+            question_array[i, :ques_tokens_len[i]] = np.array(question_token_ids[i])
+        question_attention_array[question_array == 0] = 0
+
+        # add padding to caption and history
+        # attention mask for history and caption
+        history_array = np.zeros((10, self.max_token_size))
+        history_attention_array = np.ones((10, self.max_token_size))
+        history_array[0, :capiton_tokens_len] = np.array(caption_token_ids)
+        for i in range(1, 10):
+            history_array[i, :history_tokens_len[i - 1]] = np.array(history_token_ids[i - 1])
+        history_attention_array[history_array == 0] = 0
+
+        # segment ids for question
+        question_segment = np.ones((10, self.max_token_size))
+
+        # segment ids for history and caption
+        history_segment = np.zeros((10, self.max_token_size))
+        sep = np.argmax(history_array[1:10, :] == 102, axis=1)
+        for i in range(1, 10):
+            history_segment[i, :sep[i - 1] + 1] = 0
+            history_segment[i, sep[i - 1] + 1:] = 1
+
+        question_array = torch.from_numpy(question_array)
+        question_segment = torch.from_numpy(question_segment)
+        question_attention_array = torch.from_numpy(question_attention_array)
+
+        history_array = torch.from_numpy(history_array)
+        history_segment = torch.from_numpy(history_segment)
+        history_attention_array = torch.from_numpy(history_attention_array)
+        ############################################################################################
         # get the history
         #Format of one row of his:
         #0 0 .. 0 0 q q q q a a a a
@@ -147,7 +226,11 @@ class train(data.Dataset) :  # torch wrapper
         opt_ans_vocab_first = torch.from_numpy(opt_ans_vocab_first)
         ans_idx = torch.from_numpy(ans_idx)
         opt_ans_idx = torch.from_numpy(opt_ans_idx)
-        return img, his, ques, ans_vocab_first, ans_vocab_last, ans_len, ans_idx, ques_trailing_zeros, \
+
+        # return img, his, ques, ans_vocab_first, ans_vocab_last, ans_len, ans_idx, ques_trailing_zeros, \
+        #        opt_ans_vocab_first, opt_ans_len, opt_ans_idx
+
+        return img, question_array, question_segment, question_attention_array, history_array, history_segment, history_attention_array ,ans_vocab_first, ans_vocab_last, ans_len, ans_idx, ques_trailing_zeros, \
                opt_ans_vocab_first, opt_ans_len, opt_ans_idx
 
     def __len__(self) :

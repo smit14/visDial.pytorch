@@ -80,6 +80,22 @@ def decode_txt(itow, x):
 
     return out
 
+# def decode_txt_for_bert(itow, x):
+#     """Function to show decode the text."""
+#     out = []
+#     for b in range(x.size(1)):
+#         txt = ''
+#         for t in range(x.size(0)):
+#             idx = x[t,b]
+#             if idx == 0 or idx == len(itow)+1:
+#                 txt+='[PAD]'
+#             else:
+#                 txt += itow[str(int(idx))]
+#             txt += ' '
+#         out.append(txt)
+#
+#     return out
+
 def l2_norm(input):
     """
     input: feature that need to normalize.

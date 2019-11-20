@@ -121,16 +121,17 @@ else:
     except OSError:
         pass
 
+max_token_length = 100
 ####################################################################################
 # Data Loader
 ####################################################################################
 dataset = dl.train(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
                 input_json=opt.input_json, negative_sample = opt.negative_sample,
-                num_val = opt.num_val, data_split = 'train')
+                num_val = opt.num_val, data_split = 'train', max_token_length = max_token_length)
 
 dataset_val = dl.validate(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
                 input_json=opt.input_json, negative_sample = opt.negative_sample,
-                num_val = opt.num_val, data_split = 'val')
+                num_val = opt.num_val, data_split = 'val', max_token_length = max_token_length)
 
 
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
@@ -149,6 +150,10 @@ ans_length = dataset.ans_length + 1 # 9
 his_length = dataset.ques_length + dataset.ans_length #24
 itow = dataset.itow #index to word
 img_feat_size = opt.conv_feat_size #512
+
+# bert model params
+bert_ques_length = max_token_length
+bert_his_length = max_token_length
 
 netE = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 
@@ -188,25 +193,44 @@ def train(epoch):
     i = 0
     while i < len(dataloader):
         data = data_iter.next()
-        image, history, question, answer, answerT, answerLen, answerIdx, \
+        image, question_array, question_segment, question_attention_array, history_array, history_segment, history_attention_array,\
+        answer, answerT, answerLen, answerIdx, \
         questionL, negAnswer, negAnswerLen, negAnswerIdx = data
 
-        batch_size = question.size(0)
+        batch_size = question_array.size(0)
         image = image.view(-1, img_feat_size)
         with torch.no_grad():
             img_input.resize_(image.size()).copy_(image)
 
-
         for rnd in range(10):
-            ques = question[:,rnd,:].t()
-            his = history[:,:rnd+1,:].clone().view(-1, his_length).t()
+            ques = question_array[:,rnd,:].t()
+            his = history_array[:,:rnd+1,:].clone().view(-1, bert_his_length).t()
+
+            ques_seg = question_segment[:,rnd,:].t()
+            his_seg = history_segment[:,:rnd+1,:].clone().view(-1, bert_his_length).t()
+
+            ques_attn = question_attention_array[:,rnd,:].t()
+            his_attn = history_attention_array[:, :rnd + 1, :].clone().view(-1, bert_his_length).t()
+
             ans, tans = answer[:,rnd,:].t(), answerT[:,rnd,:].t()
 
             his_input = torch.LongTensor(his.size()).cuda()
             his_input.copy_(his)
 
+            his_seg_input = torch.LongTensor(his_seg.size()).cuda()
+            his_seg_input.copy_(his_seg)
+
+            his_attn_input = torch.LongTensor(his_attn.size()).cuda()
+            his_attn_input.copy_(his_attn)
+
             ques_input = torch.LongTensor(ques.size()).cuda()
             ques_input.copy_(ques)
+
+            ques_seg_input = torch.LongTensor(ques_seg.size()).cuda()
+            ques_seg_input.copy_(ques_seg)
+
+            ques_attn_input = torch.LongTensor(ques_attn.size()).cuda()
+            ques_attn_input.copy_(ques_attn)
 
             ans_input = torch.LongTensor(ans.size()).cuda()
             ans_input.copy_(ans)
@@ -214,14 +238,14 @@ def train(epoch):
             ans_target = torch.LongTensor(tans.size()).cuda()
             ans_target.copy_(tans)
 
-            ques_emb = netW(ques_input, format = 'index')
-            his_emb = netW(his_input, format = 'index')
+            # ques_emb = netW(ques_input, format = 'index')
+            # his_emb = netW(his_input, format = 'index')
 
-            ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
-            hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
+            # ques_hidden = repackage_hidden_new(ques_hidden, batch_size)
+            # hist_hidden = repackage_hidden_new(hist_hidden, his_input.size(1))
 
-            encoder_feat, ques_hidden = netE(ques_emb, his_emb, img_input, \
-                                                ques_hidden, hist_hidden, rnd+1)
+            encoder_feat, ques_hidden = netE(ques_input, ques_seg_input, ques_attn_input,\
+                                             his_input, his_seg_input, his_attn_input, img_input, rnd+1)
 
             _, ques_hidden = netG(encoder_feat.view(1,-1,opt.ninp), ques_hidden)
 
