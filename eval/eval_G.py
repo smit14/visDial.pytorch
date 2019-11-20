@@ -40,6 +40,7 @@ parser.add_argument('--input_json', default='visdial_params.json', help='visdial
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--path_to_home',type=str)
+parser.add_argument('--evalall',action='store_true')
 
 opt = parser.parse_args()
 
@@ -130,9 +131,14 @@ if opt.cuda:
     sampler.cuda()
 
 
-netW.load_state_dict(checkpoint['netW'])
-netE.load_state_dict(checkpoint['netE'])
-netG.load_state_dict(checkpoint['netG'])
+if opt.evalall:
+    netW.load_state_dict(checkpoint['netW_g'])
+    netE.load_state_dict(checkpoint['netE_g'])
+    netG.load_state_dict(checkpoint['netG'])
+else:
+    netW.load_state_dict(checkpoint['netW'])
+    netE.load_state_dict(checkpoint['netE'])
+    netG.load_state_dict(checkpoint['netG'])
 print('Loading model Success!')
 
 def eval():
