@@ -116,9 +116,9 @@ if opt.model_path != '':
     print("=> loading checkpoint '{}'".format(opt.model_path))
     checkpoint = torch.load(opt.model_path)
     model_path = opt.model_path
+    opt = checkpoint['opt']
     opt.start_epoch = checkpoint['epoch']
     opt.model_path = model_path
-    opt.batchSize = 1
     save_path = opt.save_path
 else:
     # create new folder.
@@ -431,7 +431,7 @@ optimizer = optim.Adam([{'params': netW.parameters()},
 
 history = []
 
-for epoch in range(1, opt.niter):
+for epoch in range(opt.start_epoch+1, opt.niter):
 
     t = time.time()
     train_loss, lr = train(epoch)

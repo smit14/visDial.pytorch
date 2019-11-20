@@ -111,8 +111,9 @@ if opt.model_path != '':
     checkpoint = torch.load(opt.model_path)
     model_path = opt.model_path
     opt.start_epoch = checkpoint['epoch']
-    opt.model_path = model_path
-    opt.batchSize = 1
+    # opt.model_path = model_path
+    # opt.batchSize = 1
+    opt.start_epoch = checkpoint['epoch']
     save_path = opt.save_path
 else:
     # create new folder.
