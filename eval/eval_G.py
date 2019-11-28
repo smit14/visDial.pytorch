@@ -41,6 +41,7 @@ parser.add_argument('--model_path', default='', help='folder to output images an
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--path_to_home',type=str)
 parser.add_argument('--evalall',action='store_true')
+parser.add_argument('--early_stop', type=int, default='1000000', help='datapoints to consider')
 
 opt = parser.parse_args()
 
@@ -58,6 +59,13 @@ from misc.encoder_QIH import _netE
 from misc.netG import _netG
 import datetime
 from misc.utils import repackage_hidden_new
+
+# json output path
+pth = os.path.split(opt.model_path)
+tail = pth[1]
+tail2 = tail[:-4]
+json_path = tail2+'_top10.json'
+print('output will be dumped to: '+ json_path )
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
 if opt.cuda:
@@ -78,6 +86,8 @@ data_dir = opt.data_dir
 input_img_h5 = opt.input_img_h5
 input_ques_h5 = opt.input_ques_h5
 input_json = opt.input_json
+early_stop = opt.early_stop
+evalall = opt.evalall
 opt = checkpoint['opt']
 opt.start_epoch = checkpoint['epoch']
 opt.batchSize = 5
@@ -86,6 +96,8 @@ opt.model_path = model_path
 opt.input_img_h5 = input_img_h5
 opt.input_ques_h5 = input_ques_h5
 opt.input_json = input_json
+opt.early_stop = early_stop
+opt.evalall = evalall
 
 logger = get_eval_logger(os.path.splitext(os.path.basename(__file__))[0], opt.model_path)
 
@@ -155,7 +167,15 @@ def eval():
     display_count = 0
     average_loss = 0
     rank_all_tmp = []
-    while i < len(dataloader_val):
+    result_all = []
+
+    early_stop = int(opt.early_stop / opt.batchSize)
+    dataloader_size = min(len(dataloader_val), early_stop)
+
+    print('early_stop: {}'.format(early_stop))
+    print('dataloader_size: {}'.format(dataloader_size))
+
+    while i < dataloader_size:
         data = data_iter_val.next()
         image, history, question, answer, answerT, questionL, opt_answer, \
                 opt_answerT, answer_ids, answerLen, opt_answerLen, img_id  = data
@@ -166,6 +186,8 @@ def eval():
         with torch.no_grad():
             img_input.resize_(image.size()).copy_(image)
         # img_input.data.resize_(image.size()).copy_(image)
+
+        save_tmp = [[] for j in range(batch_size)]
 
         for rnd in range(10):
             # get the corresponding round QA and history.
@@ -238,8 +260,35 @@ def eval():
 
             count = sort_score.lt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
+            gt_rank_cpu = rank.view(-1).data.cpu().numpy()
+
+            # --------------------- get the top 10 answers -------------------------
+
+            answer_list = tans  # 9 x bs*100
+            new_sorted_idx = torch.LongTensor(batch_size * 10)
+            for b in range(batch_size):
+                new_sorted_idx[b * 10:b * 10 + 10] = sort_idx[b, :10] + b * 100
+
+            ans_array = tans.index_select(1, new_sorted_idx)
+            ans_list = decode_txt(itow, ans_array)
+
+            ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
+            ans_txt = decode_txt(itow, tans)
+
+            for b in range(batch_size):
+                data_dict = {}
+                data_dict['ques'] = ques_txt[b]
+                data_dict['gt_ans'] = ans_txt[gt_index[b]]
+                data_dict['top10_ans'] = ans_list[b * 10:(b + 1) * 10]
+                data_dict['rnd'] = rnd
+                data_dict['image_id'] = img_id[b].item()
+                data_dict['gt_ans_rank'] = str(gt_rank_cpu[b])
+                save_tmp[b].append(data_dict)
+            #------------------------------------------------------------------------
+
             rank_all_tmp += list(rank.view(-1).data.cpu().numpy())
 
+        result_all += save_tmp
         i += 1
         sys.stdout.write('Evaluating: {:d}/{:d}  \r' \
           .format(i, len(dataloader_val)))
@@ -252,7 +301,7 @@ def eval():
             mrr = np.sum(1/(np.array(rank_all_tmp, dtype='float'))) / float(len(rank_all_tmp))
             logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(i, len(dataloader_val), mrr, R1, R5, R10, ave))
 
-    return rank_all_tmp
+    return (rank_all_tmp, result_all)
 
 
 def sample():
@@ -343,10 +392,11 @@ gt_index = Variable(gt_index, volatile = True)
 his_input = Variable(his_input)
 img_input = Variable(img_input)
 
-rank_all = eval()
+rank_all, result_all = eval()
 R1 = np.sum(np.array(rank_all)==1) / float(len(rank_all))
 R5 =  np.sum(np.array(rank_all)<=5) / float(len(rank_all))
 R10 = np.sum(np.array(rank_all)<=10) / float(len(rank_all))
 ave = np.sum(np.array(rank_all)) / float(len(rank_all))
 mrr = np.sum(1/(np.array(rank_all, dtype='float'))) / float(len(rank_all))
 logger.warning('%d/%d: mrr: %f R1: %f R5 %f R10 %f Mean %f' %(1, len(dataloader_val), mrr, R1, R5, R10, ave))
+json.dump(result_all, open(json_path, 'w'))
