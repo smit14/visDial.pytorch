@@ -170,11 +170,13 @@ class nPairLoss(nn.Module):
                 print('---------------- Score difference: --------------')
                 rows = [['data_'+str(i) for i in range(batch_size)]]
                 pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
+                wrong_scores_np = wrong_dis.cpu().detach().numpy()
+                right_scores_np = right_dis.cpu().detach().numpy()
 
                 for j in range(num_wrong):
                     row = []
                     for i in range(batch_size):
-                        row.append(pair_wise_score_diff_np[i][j])
+                        row.append('{}:{}:{}'.format(right_scores_np[i], wrong_scores_np[i][j], pair_wise_score_diff_np[i][j]))
                     rows.append(row)
                 st = Texttable()
                 st.add_rows(rows)
