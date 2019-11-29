@@ -220,7 +220,7 @@ def train(epoch):
             ans = answer[:,rnd,:].t()
             tans = answerT[:,rnd,:].t()
             wrong_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
-            opt_selected_probs_for_rnd = opt_selected_probs[:, rnd, :, :]._squeeze()
+            opt_selected_probs_for_rnd = opt_selected_probs[:, rnd, :, :]
 
             real_len = answerLen[:,rnd]
             wrong_len = opt_answerLen[:,rnd,:].clone().view(-1)
