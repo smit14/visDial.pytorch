@@ -6,6 +6,7 @@ import math
 import numpy as np
 import torch.nn.functional as F
 from misc.share_Linear import share_Linear
+from texttable import Texttable
 
 class _netW(nn.Module):
     def __init__(self, ntoken, ninp, dropout):
@@ -137,7 +138,7 @@ class nPairLoss(nn.Module):
 
     Improved Deep Metric Learning with Multi-class N-pair Loss Objective (NIPS)
     """
-    def __init__(self, ninp, margin, alpha_norm=0.1, sigma=1.0, alphaC = 2.0, alphaE = 0.1, alphaN = 1.0, debug = False):
+    def __init__(self, ninp, margin, alpha_norm=0.1, sigma=1.0, alphaC = 2.0, alphaE = 0.1, alphaN = 1.0, debug = False, log_iter=5):
         super(nPairLoss, self).__init__()
         self.ninp = ninp
         self.margin = np.log(margin)
@@ -147,6 +148,8 @@ class nPairLoss(nn.Module):
         self.alphaE = alphaE
         self.alphaN = alphaN
         self.debug = debug
+        self.iter = 0
+        self.log_iter = log_iter
 
     def forward(self, feat, right, wrong, probs, fake=None, fake_diff_mask=None):
 
@@ -161,6 +164,20 @@ class nPairLoss(nn.Module):
         one_hot_probs = torch.nn.functional.one_hot(max_ind, 3).double()
 
         pair_wise_score_diff = torch.squeeze(right_dis.expand_as(wrong_dis) - wrong_dis)
+        if self.debug:
+            if iter % self.log_iter == 0:
+                print('---------------- Score difference: --------------')
+                rows = [['data_'+str(i) for i in range(batch_size)]]
+                pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
+
+                for i in range(batch_size):
+                    row = []
+                    for j in range(num_wrong):
+                        row.append(pair_wise_score_diff_np[i][j])
+                    rows.append(row)
+                st = Texttable()
+                st.add_rows(rows)
+                print(st.draw())
 
         w = one_hot_probs[:, :, 0]*self.alphaC + one_hot_probs[:, :, 1]*self.alphaE + one_hot_probs[:, :, 2]*self.alphaN #b x neg
 
