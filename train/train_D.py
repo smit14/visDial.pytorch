@@ -92,12 +92,12 @@ import misc.model as model
 from misc.encoder_QIH import _netE
 from script.test_data import check_data
 
-# ---------------------- check for data correctnes -------------------------------------
-# if check_data() == False:
-#     print("data is not up-to-date")
-#     exit(255)
+---------------------- check for data correctnes -------------------------------------
+if check_data() == False:
+    print("data is not up-to-date")
+    exit(255)
 
-# ---------------------- -------------------------------------------------------
+---------------------- -------------------------------------------------------
 
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
