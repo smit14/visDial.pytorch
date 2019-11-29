@@ -81,11 +81,12 @@ class train(data.Dataset) :  # torch wrapper
 
         f = h5py.File(input_probs, 'r')
         opt_probs_temp = f['opt_train'][s:e]
-        self.opt_probs = self._process_probs(opt_probs_temp)
+        total_images = e-s+1
+        self.opt_probs = self._process_probs(opt_probs_temp, total_images)
         f.close()
 
-    def _process_probs(self, long_probs):
-        probs = np.ndarray(shape=(self.TOTAL_VALID_IMAGES, 10, 100, 3), dtype=np.float)
+    def _process_probs(self, long_probs, total_images):
+        probs = np.ndarray(shape=(total_images, 10, 100, 3), dtype=np.float)
         magic = int(10000)
         div = long_probs//magic
         rem = long_probs%magic
