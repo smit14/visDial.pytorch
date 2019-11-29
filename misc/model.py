@@ -165,7 +165,7 @@ class nPairLoss(nn.Module):
 
         pair_wise_score_diff = torch.squeeze(right_dis.expand_as(wrong_dis) - wrong_dis)
         if self.debug:
-            if iter % self.log_iter == 0:
+            if self.iter % self.log_iter == 0:
                 print('---------------- Score difference: --------------')
                 rows = [['data_'+str(i) for i in range(batch_size)]]
                 pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
