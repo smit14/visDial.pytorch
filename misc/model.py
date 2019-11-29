@@ -170,9 +170,9 @@ class nPairLoss(nn.Module):
                 rows = [['data_'+str(i) for i in range(batch_size)]]
                 pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
 
-                for i in range(batch_size):
+                for j in range(num_wrong):
                     row = []
-                    for j in range(num_wrong):
+                    for i in range(batch_size):
                         row.append(pair_wise_score_diff_np[i][j])
                     rows.append(row)
                 st = Texttable()
