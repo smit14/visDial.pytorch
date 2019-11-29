@@ -264,7 +264,7 @@ def train(epoch):
             wrong_feat = wrong_feat.view(batch_size, -1, opt.ninp)
             batch_wrong_feat = batch_wrong_feat.view(batch_size, -1, opt.ninp)
 
-            nPairLoss = critD(featD, real_feat, wrong_feat, batch_wrong_feat)
+            nPairLoss = critD(featD, real_feat, wrong_feat)
 
             average_loss += nPairLoss.data.item()
             nPairLoss.backward()

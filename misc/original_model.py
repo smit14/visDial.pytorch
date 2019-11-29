@@ -150,7 +150,7 @@ class nPairLoss(nn.Module):
         self.iter = 0
         self.log_iter = log_iter
 
-    def forward(self, feat, right, wrong, batch_wrong, fake=None, fake_diff_mask=None):
+    def forward(self, feat, right, wrong, fake=None, fake_diff_mask=None):
 
         num_wrong = wrong.size(1)
         batch_size = feat.size(0)
@@ -158,7 +158,7 @@ class nPairLoss(nn.Module):
         feat = feat.view(-1, self.ninp, 1)
         right_dis = torch.bmm(right.view(-1, 1, self.ninp), feat)
         wrong_dis = torch.bmm(wrong, feat)
-        batch_wrong_dis = torch.bmm(batch_wrong, feat)
+        # batch_wrong_dis = torch.bmm(batch_wrong, feat)
 
         if self.debug:
             if self.iter % self.log_iter == 0:
@@ -179,11 +179,11 @@ class nPairLoss(nn.Module):
                 print(st.draw())
                 pause()
 
-        wrong_score = torch.sum(torch.exp(wrong_dis - right_dis.expand_as(wrong_dis)), 1) \
-                      + torch.sum(torch.exp(batch_wrong_dis - right_dis.expand_as(batch_wrong_dis)), 1)
+        wrong_score = torch.sum(torch.exp(wrong_dis - right_dis.expand_as(wrong_dis)), 1)
+
 
         loss_dis = torch.sum(torch.log(wrong_score + 1))
-        loss_norm = right.norm() + feat.norm() + wrong.norm() + batch_wrong.norm()
+        loss_norm = right.norm() + feat.norm() + wrong.norm()
 
         if fake:
             fake_dis = torch.bmm(fake.view(-1, 1, self.ninp), feat)
