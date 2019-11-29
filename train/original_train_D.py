@@ -82,7 +82,7 @@ sys.path.insert(1, opt.path_to_home)
 from misc.utils import repackage_hidden, repackage_hidden_new, clip_gradient, adjust_learning_rate, \
     decode_txt, sample_batch_neg, l2_norm
 
-import misc.dataLoader as dl
+import misc.original_dataLoader as dl
 import misc.model as model
 from misc.encoder_QIH import _netE
 from script.test_data import check_data
