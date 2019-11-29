@@ -176,8 +176,8 @@ class nPairLoss(nn.Module):
                 for j in range(num_wrong):
                     row = []
                     for i in range(batch_size):
-                        row.append('{} | {} | {}'.format(round(right_scores_np[i][0][0], 4), round(wrong_scores_np[i][j][0], 4),
-                                                     round(pair_wise_score_diff_np[i][j], 4)))
+                        row.append('{} | {} | {}'.format(np.around(right_scores_np[i][0][0], 4), np.around(wrong_scores_np[i][j][0], 4),
+                                                     np.round(pair_wise_score_diff_np[i][j], 4)))
                     rows.append(row)
                 st = Texttable()
                 st.add_rows(rows)
