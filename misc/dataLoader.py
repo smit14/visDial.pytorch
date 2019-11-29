@@ -12,10 +12,11 @@ from misc.utils import repackage_hidden, clip_gradient, adjust_learning_rate, de
 
 
 class train(data.Dataset) :  # torch wrapper
-    def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split) :
+    def __init__(self, input_img_h5, input_ques_h5, input_json, negative_sample, num_val, data_split,
+                 input_probs='../script/data/visdial_data_prob.h5') :
         #This is the number of images for which we have copied the new vgg features to the parallely
         #accessible h5 file. DO NOT CHANGE THIS!!!
-        TOTAL_VALID_IMAGES = 82000
+        self.TOTAL_VALID_IMAGES = 8000
 
         print(h5py.version.info)
         print('DataLoader loading: %s' % data_split)
@@ -34,7 +35,7 @@ class train(data.Dataset) :  # torch wrapper
         self.imgs = self.f_image['images_' + split]
 
         # get the data split.
-        total_num = TOTAL_VALID_IMAGES
+        total_num = self.TOTAL_VALID_IMAGES
         if data_split == 'train' :
             s = 0
             e = total_num - num_val
@@ -78,6 +79,22 @@ class train(data.Dataset) :  # torch wrapper
         self.total_qa_pairs = 10
         self.negative_sample = negative_sample
 
+        f = h5py.File(input_probs, 'r')
+        opt_probs_temp = f['opt_train'][s:e]
+        self.opt_probs = self._process_probs(opt_probs_temp)
+        f.close()
+
+    def _process_probs(self, long_probs):
+        probs = np.ndarray(shape=(self.TOTAL_VALID_IMAGES, 10, 100, 3), dtype=np.float)
+        magic = int(10000)
+        div = long_probs//magic
+        rem = long_probs%magic
+        probs[:, :, :, 2] = rem/(float(magic))
+        probs[:, :, :, 1] = div/(float(magic))
+        probs[:, :, :, 0] = 1 -probs[:, :, :, 1] - probs[:, :, :, 2]
+        return probs
+
+
     def __getitem__(self, index) :
         # get the image
         img = torch.from_numpy(self.imgs[index])
@@ -100,11 +117,13 @@ class train(data.Dataset) :  # torch wrapper
 
         ans_idx = np.zeros((self.total_qa_pairs))
         opt_ans_idx = np.zeros((self.total_qa_pairs, self.negative_sample))
+        opt_selected_probs = np.zeros((self.total_qa_pairs, self.negative_sample, 3))
 
         for i in range(self.total_qa_pairs) :
             # get the index
             q_len = self.ques_len[index, i]
             a_len = self.ans_len[index, i]
+
             qa_len = q_len + a_len
 
             if i + 1 < self.total_qa_pairs :
@@ -122,6 +141,7 @@ class train(data.Dataset) :  # torch wrapper
             ans_len[i] = self.ans_len[index, i]
 
             opt_ids = self.opt_ids[index, i]  # since python start from 0
+            opt_probs = self.opt_probs[index, i]
             # random select the negative samples.
             ans_idx[i] = opt_ids[self.ans_ids[index, i]]
             # exclude the gt index.
@@ -130,6 +150,7 @@ class train(data.Dataset) :  # torch wrapper
             for j in range(self.negative_sample) :
                 ids = opt_ids[j]
                 opt_ans_idx[i, j] = ids
+                opt_selected_probs[i, j, :] = opt_probs[i, ids, :]
 
                 opt_len = self.opt_len[ids]
 
@@ -147,8 +168,9 @@ class train(data.Dataset) :  # torch wrapper
         opt_ans_vocab_first = torch.from_numpy(opt_ans_vocab_first)
         ans_idx = torch.from_numpy(ans_idx)
         opt_ans_idx = torch.from_numpy(opt_ans_idx)
+
         return img, his, ques, ans_vocab_first, ans_vocab_last, ans_len, ans_idx, ques_trailing_zeros, \
-               opt_ans_vocab_first, opt_ans_len, opt_ans_idx
+               opt_ans_vocab_first, opt_ans_len, opt_ans_idx, opt_selected_probs
 
     def __len__(self) :
         return self.ques.shape[0]

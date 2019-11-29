@@ -189,7 +189,7 @@ def train(epoch):
     while i < len(dataloader):
         data = data_iter.next()
         image, history, question, answer, answerT, answerLen, answerIdx, \
-        questionL, negAnswer, negAnswerLen, negAnswerIdx = data
+        questionL, negAnswer, negAnswerLen, negAnswerIdx, _ = data
 
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)

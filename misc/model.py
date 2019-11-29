@@ -137,12 +137,17 @@ class nPairLoss(nn.Module):
 
     Improved Deep Metric Learning with Multi-class N-pair Loss Objective (NIPS)
     """
-    def __init__(self, ninp, margin):
+    def __init__(self, ninp, margin, alpha_norm=0.1, sigma=1.0, alphaC = 2.0, alphaE = 0.1, alphaN = 1.0):
         super(nPairLoss, self).__init__()
         self.ninp = ninp
         self.margin = np.log(margin)
+        self.alpha_norm = alpha_norm
+        self.sigma = sigma
+        self.alphaC = alphaC
+        self.alphaE = alphaE
+        self.alphaN = alphaN
 
-    def forward(self, feat, right, wrong, batch_wrong, fake=None, fake_diff_mask=None):
+    def forward(self, feat, right, wrong, probs, fake=None, fake_diff_mask=None):
 
         num_wrong = wrong.size(1)
         batch_size = feat.size(0)
@@ -150,28 +155,39 @@ class nPairLoss(nn.Module):
         feat = feat.view(-1, self.ninp, 1)
         right_dis = torch.bmm(right.view(-1, 1, self.ninp), feat)
         wrong_dis = torch.bmm(wrong, feat)
-        batch_wrong_dis = torch.bmm(batch_wrong, feat)
 
-        wrong_score = torch.sum(torch.exp(wrong_dis - right_dis.expand_as(wrong_dis)),1) \
-                + torch.sum(torch.exp(batch_wrong_dis - right_dis.expand_as(batch_wrong_dis)),1)
+        max_ind = probs.argmax(dim=2)
+        one_hot_probs = torch.nn.functional.one_hot(max_ind).double()
 
-        loss_dis = torch.sum(torch.log(wrong_score + 1))
-        loss_norm = right.norm() + feat.norm() + wrong.norm() + batch_wrong.norm()
+        pair_wise_score_diff = right_dis.expand_as(wrong_dis) - wrong_dis
 
-        if fake:
-            fake_dis = torch.bmm(fake.view(-1, 1, self.ninp), feat)
-            fake_score = torch.masked_select(torch.exp(fake_dis - right_dis), fake_diff_mask)
+        w = one_hot_probs[:, :, 0]*self.alphaC + one_hot_probs[:, :, 1]*self.alphaE + one_hot_probs[:, :, 2]*self.alphaN #b x neg
 
-            margin_score = F.relu(torch.log(fake_score + 1) - self.margin)
-            loss_fake = torch.sum(margin_score)
-            loss_dis += loss_fake
-            loss_norm += fake.norm()
+        truth_separation_probs = 1./ (1 + torch.exp(-self.sigma*(pair_wise_score_diff)))
+
+        log_likelihood_expanded = torch.log(truth_separation_probs) # b x neg
+
+        weighted_log_likelihood = log_likelihood_expanded * w
+
+        loss_dis = torch.sum(torch.mean(weighted_log_likelihood, dim = 1))
+
+        loss_norm = right.norm() + feat.norm() + wrong.norm()
+
+
+        # if fake:
+        #     fake_dis = torch.bmm(fake.view(-1, 1, self.ninp), feat)
+        #     fake_score = torch.masked_select(torch.exp(fake_dis - right_dis), fake_diff_mask)
+        #
+        #     margin_score = F.relu(torch.log(fake_score + 1) - self.margin)
+        #     loss_fake = torch.sum(margin_score)
+        #     loss_dis += loss_fake
+        #     loss_norm += fake.norm()
 
         loss = (loss_dis + 0.1 * loss_norm) / batch_size
-        if fake:
-            return loss, loss_fake.data[0] / batch_size
-        else:
-            return loss
+        # if fake:
+        #     return loss, loss_fake.data[0] / batch_size
+        # else:
+        return loss
 
 class G_loss(nn.Module):
     """

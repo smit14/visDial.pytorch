@@ -40,6 +40,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--input_img_h5', default='../script/data/vdl_img_vgg.h5', help='path to image feature, now hdf5 file')
 parser.add_argument('--input_ques_h5', default='../script/data/visdial_data.h5', help='path to label, now hdf5 file')
 parser.add_argument('--input_json', default='../script/data/visdial_params.json', help='path to dataset, now json file')
+parser.add_argument('--input_probs_h5', default='../script/data/visdial_data_prob.h5')
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
@@ -58,6 +59,11 @@ parser.add_argument('--save_iter', type=int, default=5, help='number of epochs t
 parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
 parser.add_argument('--lr', type=float, default=0.0004, help='learning rate for, default=0.00005')
 parser.add_argument('--beta1', type=float, default=0.8, help='beta1 for adam. default=0.5')
+parser.add_argument('--alpha_norm', type=float, default=0.1)
+parser.add_argument('--sigma', type=float, default=1.0)
+parser.add_argument('--alphaC', type=float, default=2.0)
+parser.add_argument('--alphaE', type=float, default=0.1)
+parser.add_argument('--alphaN', type=float, default=1.0)
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--verbose'  , action='store_true', help='show the sampled caption')
@@ -87,9 +93,9 @@ from misc.encoder_QIH import _netE
 from script.test_data import check_data
 
 # ---------------------- check for data correctnes -------------------------------------
-if check_data() == False:
-    print("data is not up-to-date")
-    exit(255)
+# if check_data() == False:
+#     print("data is not up-to-date")
+#     exit(255)
 
 # ---------------------- -------------------------------------------------------
 
@@ -131,14 +137,14 @@ else:
 
 dataset = dl.train(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
                 input_json=opt.input_json, negative_sample = opt.negative_sample,
-                num_val = opt.num_val, data_split = 'train')
+                num_val = opt.num_val, data_split = 'train', input_probs=opt.input_probs_h5)
 
 dataset_val = dl.validate(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input_ques_h5,
                 input_json=opt.input_json, negative_sample = opt.negative_sample,
                 num_val = opt.num_val, data_split = 'val')
 
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                         shuffle=True, num_workers=int(opt.workers))
+                                         shuffle=False, num_workers=int(opt.workers))
 
 dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
                                          shuffle=False, num_workers=int(opt.workers))
@@ -157,7 +163,7 @@ img_feat_size = 512
 netE = _netE(opt.model, opt.ninp, opt.nhid, opt.nlayers, opt.dropout, img_feat_size)
 netW = model._netW(vocab_size, opt.ninp, opt.dropout)
 netD = model._netD(opt.model, opt.ninp, opt.nhid, opt.nlayers, vocab_size, opt.dropout)
-critD =model.nPairLoss(opt.ninp, opt.margin)
+critD =model.nPairLoss(opt.ninp, opt.margin, opt.alpha_norm, opt.sigma, opt.alphaC, opt.alphaE, opt.alphaN)
 
 if opt.model_path != '': # load the pre-trained model.
     netW.load_state_dict(checkpoint['netW'])
@@ -195,7 +201,7 @@ def train(epoch):
         t1 = time.time()
         data = data_iter.next()
         image, history, question, answer, answerT, answerLen, answerIdx, questionL, \
-                                    opt_answerT, opt_answerLen, opt_answerIdx = data
+                                    opt_answerT, opt_answerLen, opt_answerIdx, opt_selected_probs = data
 
         batch_size = question.size(0)
         image = image.view(-1, img_feat_size)
@@ -214,6 +220,7 @@ def train(epoch):
             ans = answer[:,rnd,:].t()
             tans = answerT[:,rnd,:].t()
             wrong_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
+            opt_selected_probs_for_rnd = opt_selected_probs[:, rnd, :, :]._squeeze()
 
             real_len = answerLen[:,rnd]
             wrong_len = opt_answerLen[:,rnd,:].clone().view(-1)
@@ -233,9 +240,12 @@ def train(epoch):
             wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
             wrong_ans_input.copy_(wrong_ans)
 
-            # sample in-batch negative index
-            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
-            sample_batch_neg(answerIdx[:,rnd], opt_answerIdx[:,rnd,:], batch_sample_idx, opt.neg_batch_sample)
+            opt_selected_probs_for_rnd_input = torch.LongTensor(opt_selected_probs_for_rnd.size()).cuda()
+            opt_selected_probs_for_rnd_input.copy_(opt_selected_probs_for_rnd)
+
+            # # sample in-batch negative index
+            # batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
+            # sample_batch_neg(answerIdx[:,rnd], opt_answerIdx[:,rnd,:], batch_sample_idx, opt.neg_batch_sample)
 
             ques_emb = netW(ques_input, format = 'index')
             his_emb = netW(his_input, format = 'index')
@@ -255,11 +265,11 @@ def train(epoch):
             real_feat = netD(ans_real_emb, ans_target, real_hidden, vocab_size)
             wrong_feat = netD(ans_wrong_emb, wrong_ans_input, wrong_hidden, vocab_size)
 
-            batch_wrong_feat = wrong_feat.index_select(0, batch_sample_idx.view(-1))
+            # batch_wrong_feat = wrong_feat.index_select(0, batch_sample_idx.view(-1))
             wrong_feat = wrong_feat.view(batch_size, -1, opt.ninp)
-            batch_wrong_feat = batch_wrong_feat.view(batch_size, -1, opt.ninp)
+            # batch_wrong_feat = batch_wrong_feat.view(batch_size, -1, opt.ninp)
 
-            nPairLoss = critD(featD, real_feat, wrong_feat, batch_wrong_feat)
+            nPairLoss = critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
 
             average_loss += nPairLoss.data.item()
             nPairLoss.backward()

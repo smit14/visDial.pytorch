@@ -248,7 +248,7 @@ def train(epoch):
         t1 = time.time()
         data = data_iter.next()
         image, history, question, answer, answerT, answerLen, answerIdx, questionL, \
-                                    opt_answerT, opt_answerLen, opt_answerIdx = data
+                                    opt_answerT, opt_answerLen, opt_answerIdx, _ = data
         batch_size = question.size(0)
         image = image.view(-1, 512)
         with torch.no_grad():
