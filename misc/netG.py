@@ -136,7 +136,7 @@ class _netG(nn.Module):
 
 					# encode as vectors
 					it = beam_seq[t-1].view(1,-1)
-					xt = netW(Variable(it.cuda()))
+					xt = netW(Variable(it.cpu()))
 
 				if t >= 1:
 					state = new_state
@@ -186,11 +186,11 @@ class _netG(nn.Module):
 				it = it.view(-1).long()
 			else:
 				if temperature == 1.0:
-					prob_prev = torch.exp(logprobs.data).cuda() # fetch prev distribution: shape Nx(M+1)
+					prob_prev = torch.exp(logprobs.data).cpu() # fetch prev distribution: shape Nx(M+1)
 				else:
 					# scale logprobs by temperature
-					prob_prev = torch.exp(torch.div(logprobs.data, temperature)).cuda()
-				it = torch.multinomial(prob_prev, 1).cuda()
+					prob_prev = torch.exp(torch.div(logprobs.data, temperature)).cpu()
+				it = torch.multinomial(prob_prev, 1).cpu()
 				sampleLogprobs = logprobs.gather(1, Variable(it, requires_grad=False)) # gather the logprobs at sampled positions
 				it = it.view(-1).long() # and flatten indices for downstream processing
 

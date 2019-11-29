@@ -17,21 +17,21 @@ class _netE(nn.Module):
         self.nhid = nhid
         self.nlayers = nlayers
         self.ninp = ninp
-        self.img_embed = nn.Linear(img_feat_size, nhid).cuda()
+        self.img_embed = nn.Linear(img_feat_size, nhid).cpu()
 
-        self.ques_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cuda()
-        self.his_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cuda()
+        self.ques_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cpu()
+        self.his_rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout).cpu()
 
-        self.Wq_1 = nn.Linear(self.nhid, self.nhid).cuda()
-        self.Wh_1 = nn.Linear(self.nhid, self.nhid).cuda()
-        self.Wa_1 = nn.Linear(self.nhid, 1).cuda()
+        self.Wq_1 = nn.Linear(self.nhid, self.nhid).cpu()
+        self.Wh_1 = nn.Linear(self.nhid, self.nhid).cpu()
+        self.Wa_1 = nn.Linear(self.nhid, 1).cpu()
 
-        self.Wq_2 = nn.Linear(self.nhid, self.nhid).cuda()
-        self.Wh_2 = nn.Linear(self.nhid, self.nhid).cuda()
-        self.Wi_2 = nn.Linear(self.nhid, self.nhid).cuda()
-        self.Wa_2 = nn.Linear(self.nhid, 1).cuda()
+        self.Wq_2 = nn.Linear(self.nhid, self.nhid).cpu()
+        self.Wh_2 = nn.Linear(self.nhid, self.nhid).cpu()
+        self.Wi_2 = nn.Linear(self.nhid, self.nhid).cpu()
+        self.Wa_2 = nn.Linear(self.nhid, 1).cpu()
 
-        self.fc1 = nn.Linear(self.nhid*3, self.ninp).cuda()
+        self.fc1 = nn.Linear(self.nhid*3, self.ninp).cpu()
 
     def forward(self, ques_emb, his_emb, img_raw, ques_hidden, his_hidden, rnd):
 
@@ -77,7 +77,7 @@ class _netE(nn.Module):
     def init_hidden(self, bsz):
         weight = next(self.parameters()).data
         if self.rnn_type == 'LSTM':
-            return (Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cuda(),
-                    Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cuda())
+            return (Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cpu(),
+                    Variable(weight.new(self.nlayers, bsz, self.nhid).zero_()).cpu())
         else:
             return Variable(weight.new(self.nlayers, bsz, self.nhid).zero_())

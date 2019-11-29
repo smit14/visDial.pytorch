@@ -137,8 +137,8 @@ netD.load_state_dict(checkpoint['netD'])
 print('Loading model Success!')
 
 if opt.cuda: # ship to cuda, if has GPU
-    netW.cuda(), netE.cuda(), netD.cuda()
-    critD.cuda()
+    netW.cpu(), netE.cpu(), netD.cpu()
+    critD.cpu()
 
 n_neg = 100
 ####################################################################################
@@ -190,16 +190,16 @@ def eval():
             opt_ans = opt_answerT[:,rnd,:].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:,rnd]
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index = torch.LongTensor(gt_id.size()).cpu()
             gt_index.copy_(gt_id)
 
-            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cpu()
             opt_ans_input.copy_(opt_ans)
 
             opt_len = opt_answerLen[:,rnd,:].clone().view(-1)
@@ -297,15 +297,15 @@ gt_index = torch.LongTensor(opt.batchSize)
 
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
-    opt_ans_input = opt_ans_input.cuda()
-    fake_ans_input, sample_ans_input = fake_ans_input.cuda(), sample_ans_input.cuda()
-    opt_index, fake_index =  opt_index.cuda(), fake_index.cuda()
+    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
+    opt_ans_input = opt_ans_input.cpu()
+    fake_ans_input, sample_ans_input = fake_ans_input.cpu(), sample_ans_input.cpu()
+    opt_index, fake_index =  opt_index.cpu(), fake_index.cpu()
 
-    fake_len = fake_len.cuda()
-    noise_input = noise_input.cuda()
-    batch_sample_idx = batch_sample_idx.cuda()
-    gt_index = gt_index.cuda()
+    fake_len = fake_len.cpu()
+    noise_input = noise_input.cpu()
+    batch_sample_idx = batch_sample_idx.cpu()
+    gt_index = gt_index.cpu()
 
 
 ques_input = Variable(ques_input)
