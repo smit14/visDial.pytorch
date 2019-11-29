@@ -48,7 +48,7 @@ parser.add_argument('--num_val', type=int, default=1000, help='number of image s
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
-parser.add_argument('--neg_batch_sample', type=int, default=30, help='folder to output images and model checkpoints')
+parser.add_argument('--neg_batch_sample', type=int, default=0, help='folder to output images and model checkpoints')
 parser.add_argument('--start_epoch', type=int, default=1, help='start of epochs to train for')
 parser.add_argument('--teacher_forcing', type=int, default=1, help='start of epochs to train for')
 

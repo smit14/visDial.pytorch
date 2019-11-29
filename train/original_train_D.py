@@ -48,7 +48,7 @@ parser.add_argument('--num_val', type=int, default=1000, help='number of image s
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
-parser.add_argument('--neg_batch_sample', type=int, default=30, help='folder to output images and model checkpoints')
+parser.add_argument('--neg_batch_sample', type=int, default=0, help='folder to output images and model checkpoints')
 parser.add_argument('--start_epoch', type=int, default=1, help='start of epochs to train for')
 parser.add_argument('--teacher_forcing', type=int, default=1, help='start of epochs to train for')
 
@@ -60,6 +60,7 @@ parser.add_argument('--adam', action='store_true', help='Whether to use adam (de
 parser.add_argument('--lr', type=float, default=0.0004, help='learning rate for, default=0.00005')
 parser.add_argument('--beta1', type=float, default=0.8, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
+parser.add_argument('--debug', action='store_true', help='prints stuff in debug mode')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--verbose', action='store_true', help='show the sampled caption')
 
@@ -74,6 +75,7 @@ parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--log_interval', type=int, default=5, help='how many iterations show the log info')
 parser.add_argument('--path_to_home', type=str)
+
 
 opt = parser.parse_args()
 print(opt)
@@ -140,7 +142,7 @@ dataset_val = dl.validate(input_img_h5=opt.input_img_h5, input_ques_h5=opt.input
                           num_val=opt.num_val, data_split='val')
 
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                         shuffle=True, num_workers=int(opt.workers))
+                                         shuffle=False, num_workers=int(opt.workers))
 
 dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
                                              shuffle=False, num_workers=int(opt.workers))

@@ -6,7 +6,8 @@ import math
 import numpy as np
 import torch.nn.functional as F
 from misc.share_Linear import share_Linear
-
+from texttable import Texttable
+from getch import pause
 
 class _netW(nn.Module):
     def __init__(self, ntoken, ninp, dropout):
@@ -141,11 +142,13 @@ class nPairLoss(nn.Module):
 
     Improved Deep Metric Learning with Multi-class N-pair Loss Objective (NIPS)
     """
-
-    def __init__(self, ninp, margin):
+    def __init__(self, ninp, margin,  debug = False, log_iter=5):
         super(nPairLoss, self).__init__()
         self.ninp = ninp
         self.margin = np.log(margin)
+        self.debug = debug
+        self.iter = 0
+        self.log_iter = log_iter
 
     def forward(self, feat, right, wrong, batch_wrong, fake=None, fake_diff_mask=None):
 
@@ -156,6 +159,25 @@ class nPairLoss(nn.Module):
         right_dis = torch.bmm(right.view(-1, 1, self.ninp), feat)
         wrong_dis = torch.bmm(wrong, feat)
         batch_wrong_dis = torch.bmm(batch_wrong, feat)
+
+        if self.debug:
+            if self.iter % self.log_iter == 0:
+                print('---------------- Scores ------------------')
+                rows = [['data_' + str(i) for i in range(batch_size)]]
+                # pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
+                wrong_scores_np = wrong_dis.cpu().detach().numpy()
+                right_scores_np = right_dis.cpu().detach().numpy()
+
+                for j in range(num_wrong):
+                    row = []
+                    for i in range(batch_size):
+                        row.append(
+                            '{}:{}'.format(right_scores_np[i], wrong_scores_np[i][j]))
+                    rows.append(row)
+                st = Texttable()
+                st.add_rows(rows)
+                print(st.draw())
+                pause()
 
         wrong_score = torch.sum(torch.exp(wrong_dis - right_dis.expand_as(wrong_dis)), 1) \
                       + torch.sum(torch.exp(batch_wrong_dis - right_dis.expand_as(batch_wrong_dis)), 1)
