@@ -157,7 +157,7 @@ class nPairLoss(nn.Module):
         wrong_dis = torch.bmm(wrong, feat)
 
         max_ind = probs.argmax(dim=2)
-        one_hot_probs = torch.nn.functional.one_hot(max_ind).double()
+        one_hot_probs = torch.nn.functional.one_hot(max_ind, 3).double()
 
         pair_wise_score_diff = right_dis.expand_as(wrong_dis) - wrong_dis
 
