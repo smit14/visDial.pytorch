@@ -169,7 +169,7 @@ class nPairLoss(nn.Module):
 
         weighted_log_likelihood = log_likelihood_expanded * w
 
-        loss_dis = torch.sum(torch.mean(weighted_log_likelihood, dim = 1))
+        loss_dis = -torch.sum(torch.mean(weighted_log_likelihood, dim = 1))
 
         loss_norm = right.norm() + feat.norm() + wrong.norm()
 
