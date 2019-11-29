@@ -153,7 +153,7 @@ class nPairLoss(nn.Module):
         self.log_iter = log_iter
 
     def forward(self, feat, right, wrong, probs, fake=None, fake_diff_mask=None):
-
+        np.set_printoptions(precision=4)
         num_wrong = wrong.size(1)
         batch_size = feat.size(0)
 
@@ -176,7 +176,7 @@ class nPairLoss(nn.Module):
                 for j in range(num_wrong):
                     row = []
                     for i in range(batch_size):
-                        row.append('%.4f | %.4f: | %.4f'.format(round(right_scores_np[i][0][0], 4), round(wrong_scores_np[i][j][0], 4),
+                        row.append('{} | {} | {}'.format(round(right_scores_np[i][0][0], 4), round(wrong_scores_np[i][j][0], 4),
                                                      round(pair_wise_score_diff_np[i][j], 4)))
                     rows.append(row)
                 st = Texttable()
