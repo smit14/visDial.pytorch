@@ -44,7 +44,7 @@ parser.add_argument('--input_json', default='../script/data/visdial_params.json'
 parser.add_argument('--outf', default='./save', help='folder to output model checkpoints')
 parser.add_argument('--decoder', default='D', help='what decoder to use.')
 parser.add_argument('--model_path', default='', help='folder to output images and model checkpoints')
-parser.add_argument('--num_val', default=1000, help='number of image split out as validation set.')
+parser.add_argument('--num_val', type=int, default=1000, help='number of image split out as validation set.')
 
 parser.add_argument('--niter', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--negative_sample', type=int, default=20, help='folder to output images and model checkpoints')
