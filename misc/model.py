@@ -7,6 +7,7 @@ import numpy as np
 import torch.nn.functional as F
 from misc.share_Linear import share_Linear
 from texttable import Texttable
+from getch import pause
 
 class _netW(nn.Module):
     def __init__(self, ntoken, ninp, dropout):
@@ -178,6 +179,7 @@ class nPairLoss(nn.Module):
                 st = Texttable()
                 st.add_rows(rows)
                 print(st.draw())
+                pause()
 
         w = one_hot_probs[:, :, 0]*self.alphaC + one_hot_probs[:, :, 1]*self.alphaE + one_hot_probs[:, :, 2]*self.alphaN #b x neg
 
