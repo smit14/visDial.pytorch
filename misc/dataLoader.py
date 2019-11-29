@@ -81,7 +81,7 @@ class train(data.Dataset) :  # torch wrapper
 
         f = h5py.File(input_probs, 'r')
         opt_probs_temp = f['opt_train'][s:e]
-        total_images = e-s+1
+        total_images = e-s
         self.opt_probs = self._process_probs(opt_probs_temp, total_images)
         f.close()
 
