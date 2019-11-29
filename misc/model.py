@@ -184,7 +184,7 @@ class nPairLoss(nn.Module):
         #     loss_dis += loss_fake
         #     loss_norm += fake.norm()
 
-        loss = (loss_dis + 0.1 * loss_norm) / batch_size
+        loss = (loss_dis + self.alpha_norm * loss_norm) / batch_size
         # if fake:
         #     return loss, loss_fake.data[0] / batch_size
         # else:
