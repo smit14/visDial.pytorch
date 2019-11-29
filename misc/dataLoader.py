@@ -142,6 +142,8 @@ class train(data.Dataset) :  # torch wrapper
             ans_len[i] = self.ans_len[index, i]
 
             opt_ids = self.opt_ids[index, i]  # since python start from 0
+            opt_original_ranks = [i for i in  range(len(opt_ids))]
+
             opt_probs = self.opt_probs[index, i]
             # random select the negative samples.
             ans_idx[i] = opt_ids[self.ans_ids[index, i]]
