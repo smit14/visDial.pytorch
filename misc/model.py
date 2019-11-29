@@ -137,7 +137,7 @@ class nPairLoss(nn.Module):
 
     Improved Deep Metric Learning with Multi-class N-pair Loss Objective (NIPS)
     """
-    def __init__(self, ninp, margin, alpha_norm=0.1, sigma=1.0, alphaC = 2.0, alphaE = 0.1, alphaN = 1.0):
+    def __init__(self, ninp, margin, alpha_norm=0.1, sigma=1.0, alphaC = 2.0, alphaE = 0.1, alphaN = 1.0, debug = False):
         super(nPairLoss, self).__init__()
         self.ninp = ninp
         self.margin = np.log(margin)
@@ -146,6 +146,7 @@ class nPairLoss(nn.Module):
         self.alphaC = alphaC
         self.alphaE = alphaE
         self.alphaN = alphaN
+        self.debug = debug
 
     def forward(self, feat, right, wrong, probs, fake=None, fake_diff_mask=None):
 
