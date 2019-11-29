@@ -151,7 +151,7 @@ class train(data.Dataset) :  # torch wrapper
             for j in range(self.negative_sample) :
                 ids = opt_ids[j]
                 opt_ans_idx[i, j] = ids
-                opt_selected_probs[i, j, :] = opt_probs[i, ids, :]
+                opt_selected_probs[i, j, :] = opt_probs[ids, :]
 
                 opt_len = self.opt_len[ids]
 
