@@ -285,7 +285,7 @@ def train(epoch):
             nPairLoss, dist_summary = critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
 
             average_loss += nPairLoss.data.item()
-            dist_summary += dist_summary.cpu().detach().numpy()
+            avg_dist_summary += dist_summary.cpu().detach().numpy()
             nPairLoss.backward()
             optimizer.step()
             count += 1
