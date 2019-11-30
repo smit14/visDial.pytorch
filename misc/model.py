@@ -164,6 +164,7 @@ class nPairLoss(nn.Module):
         max_ind = probs.argmax(dim=2)
         one_hot_probs = torch.nn.functional.one_hot(max_ind, 3).double()
 
+        smooth_dist_summary = torch.sum(torch.sum(probs, dim=1), dim=0)
         dist_summary = torch.sum(torch.sum(one_hot_probs, dim=1), dim=0)
 
         pair_wise_score_diff = torch.squeeze(right_dis.expand_as(wrong_dis) - wrong_dis)
@@ -212,7 +213,7 @@ class nPairLoss(nn.Module):
         # if fake:
         #     return loss, loss_fake.data[0] / batch_size
         # else:
-        return loss, dist_summary
+        return loss, dist_summary, smooth_dist_summary
 
 class G_loss(nn.Module):
     """

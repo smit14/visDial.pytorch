@@ -203,6 +203,7 @@ def train(epoch):
 
     average_loss = 0
     avg_dist_summary = np.zeros(3, dtype=float)
+    smooth_avg_dist_summary = np.zeros(3, dtype=float)
     count = 0
     i = 0
 
@@ -286,6 +287,7 @@ def train(epoch):
 
             average_loss += nPairLoss.data.item()
             avg_dist_summary += dist_summary.cpu().detach().numpy()
+            smooth_avg_dist_summary += smooth_avg_dist_summary.cpu().detach().numpy()
             nPairLoss.backward()
             optimizer.step()
             count += 1
@@ -294,10 +296,12 @@ def train(epoch):
         if i % opt.log_interval == 0:
             average_loss /= count
             avg_dist_summary = avg_dist_summary/np.sum(avg_dist_summary)
-            print("step {} / {} (epoch {}), g_loss {:.3f}, lr = {:.6f}, CEN dist: {}"\
-                .format(i, len(dataloader), epoch, average_loss, lr, avg_dist_summary))
+            smooth_avg_dist_summary = smooth_avg_dist_summary/np.sum(smooth_avg_dist_summary)
+            print("step {} / {} (epoch {}), g_loss {:.3f}, lr = {:.6f}, CEN dist: {}, CEN smooth: {}"\
+                .format(i, len(dataloader), epoch, average_loss, lr, avg_dist_summary, smooth_avg_dist_summary))
             average_loss = 0
             avg_dist_summary = np.zeros(3, dtype=float)
+            smooth_avg_dist_summary = np.zeros(3, dtype=float)
             count = 0
 
     return average_loss, lr
