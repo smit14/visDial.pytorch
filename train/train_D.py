@@ -283,11 +283,12 @@ def train(epoch):
             wrong_feat = wrong_feat.view(batch_size, -1, opt.ninp)
             # batch_wrong_feat = batch_wrong_feat.view(batch_size, -1, opt.ninp)
 
-            nPairLoss, dist_summary = critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
+            nPairLoss, dist_summary, smooth_dist_summary = \
+                critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
 
             average_loss += nPairLoss.data.item()
             avg_dist_summary += dist_summary.cpu().detach().numpy()
-            smooth_avg_dist_summary += smooth_avg_dist_summary.cpu().detach().numpy()
+            smooth_avg_dist_summary += smooth_dist_summary.cpu().detach().numpy()
             nPairLoss.backward()
             optimizer.step()
             count += 1
