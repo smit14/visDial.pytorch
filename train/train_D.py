@@ -80,6 +80,8 @@ parser.add_argument('--clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--margin', type=float, default=2, help='number of epochs to train for')
 parser.add_argument('--log_interval', type=int, default=5, help='how many iterations show the log info')
 parser.add_argument('--path_to_home',type=str)
+parser.add_argument('--exp_name', type=str, help='name of the expemriment')
+parser.add_argument('--early_stop', type=int, default='1000000', help='datapoints to consider')
 
 opt = parser.parse_args()
 print(opt)
@@ -98,7 +100,8 @@ if check_data() == False:
     print("data is not up-to-date")
     exit(255)
 
-# ---------------------- -------------------------------------------------------
+# ---------------------- ---------------------------------------------------------------
+
 
 
 opt.manualSeed = random.randint(1, 10000) # fix seed
@@ -118,14 +121,18 @@ if opt.model_path != '':
     checkpoint = torch.load(opt.model_path)
     model_path = opt.model_path
     opt.start_epoch = checkpoint['epoch']
-    opt.model_path = model_path
-    opt.batchSize = 1
+    # opt.model_path = model_path
+    # opt.batchSize = 1
+    opt.start_epoch = checkpoint['epoch']
     save_path = opt.save_path
 else:
     # create new folder.
     t = datetime.datetime.now()
-    cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
-    save_path = os.path.join(opt.outf, opt.decoder + '.' + cur_time)
+    if(opt.exp_name is None or opt.exp_name == ''):
+        print('Model path is not provided. Cannot run experiment without providing --exp_name')
+        exit(255)
+    # cur_time = '%s-%s-%s' %(t.day, t.month, t.hour)
+    save_path = os.path.join(opt.outf, opt.exp_name)
     opt.save_path = save_path
     try:
         os.makedirs(save_path)
@@ -197,7 +204,10 @@ def train(epoch):
     count = 0
     i = 0
 
-    while i < len(dataloader):
+    # size of data to work on
+    early_stop = int(opt.early_stop / opt.batchSize)
+    dataloader_size = min(len(dataloader), early_stop)
+    while i < dataloader_size: #len(dataloader):
 
         t1 = time.time()
         data = data_iter.next()
@@ -433,7 +443,7 @@ optimizer = optim.Adam([{'params': netW.parameters()},
 
 history = []
 
-for epoch in range(1, opt.niter):
+for epoch in range(opt.start_epoch+1, opt.niter):
 
     t = time.time()
     train_loss, lr = train(epoch)
