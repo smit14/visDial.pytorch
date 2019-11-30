@@ -66,6 +66,7 @@ parser.add_argument('--alphaE', type=float, default=0.1)
 parser.add_argument('--alphaN', type=float, default=1.0)
 parser.add_argument('--cuda'  , action='store_true', help='enables cuda')
 parser.add_argument('--debug', action='store_true', help='prints stuff in debug mode')
+parser.add_argument('--sample_dist', action='store_true', help='Used for seeing distribution of C,E,N in samples')
 parser.add_argument('--ngpu'  , type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--verbose'  , action='store_true', help='show the sampled caption')
 
@@ -201,6 +202,7 @@ def train(epoch):
     data_iter = iter(dataloader)
 
     average_loss = 0
+    avg_dist_summary = np.zeros(3, dtype=float)
     count = 0
     i = 0
 
@@ -280,9 +282,10 @@ def train(epoch):
             wrong_feat = wrong_feat.view(batch_size, -1, opt.ninp)
             # batch_wrong_feat = batch_wrong_feat.view(batch_size, -1, opt.ninp)
 
-            nPairLoss = critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
+            nPairLoss, dist_summary = critD(featD, real_feat, wrong_feat, opt_selected_probs_for_rnd_input)
 
             average_loss += nPairLoss.data.item()
+            dist_summary += dist_summary.cpu().detach().numpy()
             nPairLoss.backward()
             optimizer.step()
             count += 1
@@ -290,9 +293,11 @@ def train(epoch):
         i += 1
         if i % opt.log_interval == 0:
             average_loss /= count
-            print("step {} / {} (epoch {}), g_loss {:.3f}, lr = {:.6f}"\
-                .format(i, len(dataloader), epoch, average_loss, lr))
+            avg_dist_summary = avg_dist_summary/np.sum(avg_dist_summary)
+            print("step {} / {} (epoch {}), g_loss {:.3f}, lr = {:.6f}, CEN dist: {}"\
+                .format(i, len(dataloader), epoch, average_loss, lr, avg_dist_summary))
             average_loss = 0
+            avg_dist_summary = np.zeros(3, dtype=float)
             count = 0
 
     return average_loss, lr
