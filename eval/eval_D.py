@@ -236,8 +236,8 @@ def eval():
 
             opt_answer_cur_ques = opt_answerT.detach().numpy()[:, rnd, :, :] #5, 100, 9
             top_sort_idx = sort_idx.cpu().detach().numpy()[:, 0:opt.topn]
-            first_dim_indices = np.broadcast_to(np.arange(batch_size).reshape(batch_size,1),(batch_size,10)).reshape(batch_size*10)
-            top_ans_word_indices = opt_answer_cur_ques[first_dim_indices, top_sort_idx.reshape(batch_size*10), :].reshape(batch_size, 10, 9)
+            first_dim_indices = np.broadcast_to(np.arange(batch_size).reshape(batch_size,1),(batch_size,opt.topn)).reshape(batch_size*opt.topn)
+            top_ans_word_indices = opt_answer_cur_ques[first_dim_indices, top_sort_idx.reshape(batch_size*opt.topn), :].reshape(batch_size, opt.topn, 9)
             top_ans_txt_rank_wise = [] #10, 5 as strings
 
             ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
