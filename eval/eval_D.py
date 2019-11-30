@@ -20,6 +20,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
+from getch import pause
 
 # from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
 # import misc.dataLoader as dl
@@ -48,8 +49,9 @@ pth = os.path.split(opt.model_path)
 tail = pth[1]
 tail2 = tail[:-4]
 json_path = tail2+'.json'
-print('output will be dumped to: '+ json_path )
-
+json_path = os.path.join(pth[0], json_path)
+print('output will be dumped to: '+ json_path)
+pause()
 if(opt.model_path==''):
     print('Model path required for evaluation')
     exit(255)
