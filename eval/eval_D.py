@@ -51,7 +51,7 @@ tail2 = tail[:-4]
 json_path = tail2+'.json'
 json_path = os.path.join(pth[0], json_path)
 print('output will be dumped to: '+ json_path)
-pause()
+
 if(opt.model_path==''):
     print('Model path required for evaluation')
     exit(255)
