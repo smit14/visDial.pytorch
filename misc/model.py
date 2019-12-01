@@ -170,21 +170,29 @@ class nPairLoss(nn.Module):
         pair_wise_score_diff = torch.squeeze(right_dis.expand_as(wrong_dis) - wrong_dis)
         if self.debug:
             if self.iter % self.log_iter == 0:
-                print('---------------- Score difference: --------------')
-                rows = [['data_'+str(i) for i in range(batch_size)]]
-                pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
-                wrong_scores_np = wrong_dis.cpu().detach().numpy()
-                right_scores_np = right_dis.cpu().detach().numpy()
-
-                for j in range(num_wrong):
-                    row = []
-                    for i in range(batch_size):
-                        row.append('%.4f | %.4f | %.4f' % (np.around(right_scores_np[i][0][0], 4), np.around(wrong_scores_np[i][j][0], 4),
-                                                     np.round(pair_wise_score_diff_np[i][j], 4)))
-                    rows.append(row)
-                st = Texttable()
-                st.add_rows(rows)
-                print(st.draw())
+                # print('---------------- Score difference: --------------')
+                # rows = [['data_'+str(i) for i in range(batch_size)]]
+                # pair_wise_score_diff_np = pair_wise_score_diff.cpu().detach().numpy()
+                # wrong_scores_np = wrong_dis.cpu().detach().numpy()
+                # right_scores_np = right_dis.cpu().detach().numpy()
+                #
+                # for j in range(num_wrong):
+                #     row = []
+                #     for i in range(batch_size):
+                #         row.append('%.4f | %.4f | %.4f' % (np.around(right_scores_np[i][0][0], 4), np.around(wrong_scores_np[i][j][0], 4),
+                #                                      np.round(pair_wise_score_diff_np[i][j], 4)))
+                #     rows.append(row)
+                # st = Texttable()
+                # st.add_rows(rows)
+                # print(st.draw())
+                print('----------------Probabilities------------------')
+                print(probs.cpu().detach().numpy())
+                print('----------------One hot------------------------')
+                print(one_hot_probs.cpu().detach().numpy())
+                print('----------------dist_summary-------------------')
+                print(dist_summary.cpu().detach().numpy())
+                print('----------------smooth_dist_summary------------')
+                print(smooth_dist_summary.cpu().detach().numpy())
                 pause()
 
         w = one_hot_probs[:, :, 0]*self.alphaC + one_hot_probs[:, :, 1]*self.alphaE + one_hot_probs[:, :, 2]*self.alphaN #b x neg
