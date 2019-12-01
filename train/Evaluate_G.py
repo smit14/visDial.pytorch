@@ -153,19 +153,19 @@ def val():
             # ans_input.data.resize_(ans.size()).copy_(ans)
             # ans_target.data.resize_(tans.size()).copy_(tans)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            ans_input = torch.LongTensor(ans.size()).cuda()
+            ans_input = torch.LongTensor(ans.size()).cpu()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size()).cuda()
+            ans_target = torch.LongTensor(tans.size()).cpu()
             ans_target.copy_(tans)
 
-            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index = torch.LongTensor(gt_id.size()).cpu()
             gt_index.copy_(gt_id)
 
             ques_emb = netW(ques_input, format = 'index')
@@ -234,11 +234,11 @@ critG = model.LMCriterion()
 sampler = model.gumbel_sampler()
 opt.cuda = True
 if opt.cuda:
-    netW.cuda()
-    netE.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda()
+    netW.cpu()
+    netE.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu()
 
 path = './save/G_QIH_VGG.13-11-3/'
 for i in range(1,17):
@@ -265,11 +265,11 @@ for i in range(1,17):
     gt_index = torch.LongTensor(opt.batchSize)
 
     if opt.cuda:
-        img_input, his_input = img_input.cuda(), his_input.cuda()
-        ques_input, ans_vocab_first_input = ques_input.cuda(), ans_vocab_first_input.cuda()
-        ans_vocab_last_input, ans_sample = ans_vocab_last_input.cuda(), ans_sample.cuda()
-        noise_input = noise_input.cuda()
-        gt_index = gt_index.cuda()
+        img_input, his_input = img_input.cpu(), his_input.cpu()
+        ques_input, ans_vocab_first_input = ques_input.cpu(), ans_vocab_first_input.cpu()
+        ans_vocab_last_input, ans_sample = ans_vocab_last_input.cpu(), ans_sample.cpu()
+        noise_input = noise_input.cpu()
+        gt_index = gt_index.cpu()
 
     ques_input = Variable(ques_input)
     ans_vocab_first_input = Variable(ans_vocab_first_input)

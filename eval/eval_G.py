@@ -136,11 +136,11 @@ sampler = model.gumbel_sampler()
 
 
 if opt.cuda:
-    netW.cuda()
-    netE.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda()
+    netW.cpu()
+    netE.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu()
 
 
 if opt.evalall:
@@ -203,19 +203,19 @@ def eval():
             #
             # gt_index.data.resize_(gt_id.size()).copy_(gt_id)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            ans_input = torch.LongTensor(ans.size()).cuda()
+            ans_input = torch.LongTensor(ans.size()).cpu()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size()).cuda()
+            ans_target = torch.LongTensor(tans.size()).cpu()
             ans_target.copy_(tans)
 
-            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index = torch.LongTensor(gt_id.size()).cpu()
             gt_index.copy_(gt_id)
 
             ques_emb = netW(ques_input, format = 'index')
@@ -377,11 +377,11 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, ans_input = ques_input.cuda(), ans_input.cuda()
-    ans_target, ans_sample = ans_target.cuda(), ans_sample.cuda()
-    gt_index = gt_index.cuda()
-    noise_input = noise_input.cuda()
-    his_input,img_input = his_input.cuda(),img_input.cuda()
+    ques_input, ans_input = ques_input.cpu(), ans_input.cpu()
+    ans_target, ans_sample = ans_target.cpu(), ans_sample.cpu()
+    gt_index = gt_index.cpu()
+    noise_input = noise_input.cpu()
+    his_input,img_input = his_input.cpu(),img_input.cpu()
 
 ques_input = Variable(ques_input, volatile=True)
 ans_input = Variable(ans_input, volatile=True)

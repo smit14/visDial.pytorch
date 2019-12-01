@@ -169,8 +169,8 @@ if opt.model_path != '':  # load the pre-trained model.
     netD.load_state_dict(checkpoint['netD'])
 
 if opt.cuda:  # ship to cuda, if has GPU
-    netW.cuda(), netE.cuda(),
-    netD.cuda(), critD.cuda()
+    netW.cpu(), netE.cpu(),
+    netD.cpu(), critD.cpu()
 
 
 ####################################################################################
@@ -223,23 +223,23 @@ def train(epoch):
             real_len = answerLen[:, rnd]
             wrong_len = opt_answerLen[:, rnd, :].clone().view(-1)
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            ans_input = torch.LongTensor(ans.size()).cuda()
+            ans_input = torch.LongTensor(ans.size()).cpu()
             ans_input.copy_(ans)
 
-            ans_target = torch.LongTensor(tans.size()).cuda()
+            ans_target = torch.LongTensor(tans.size()).cpu()
             ans_target.copy_(tans)
 
-            wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
+            wrong_ans_input = torch.LongTensor(wrong_ans.size()).cpu()
             wrong_ans_input.copy_(wrong_ans)
 
             # sample in-batch negative index
-            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cuda()
+            batch_sample_idx = torch.zeros(batch_size, opt.neg_batch_sample, dtype=torch.long).cpu()
             sample_batch_neg(answerIdx[:, rnd], opt_answerIdx[:, rnd, :], batch_sample_idx, opt.neg_batch_sample)
 
             ques_emb = netW(ques_input, format='index')
@@ -320,16 +320,16 @@ def val():
             opt_ans = opt_answerT[:, rnd, :].clone().view(-1, ans_length).t()
             gt_id = answer_ids[:, rnd]
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cpu()
             opt_ans_input.copy_(opt_ans)
 
-            gt_index = torch.LongTensor(gt_id.size()).cuda()
+            gt_index = torch.LongTensor(gt_id.size()).cpu()
             gt_index.copy_(gt_id)
 
             opt_len = opt_answerLen[:, rnd, :].clone().view(-1)
@@ -392,17 +392,17 @@ noise_input = torch.FloatTensor(opt.batchSize)
 gt_index = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
-    ans_input, ans_target = ans_input.cuda(), ans_target.cuda()
-    wrong_ans_input = wrong_ans_input.cuda()
-    sample_ans_input = sample_ans_input.cuda()
+    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
+    ans_input, ans_target = ans_input.cpu(), ans_target.cpu()
+    wrong_ans_input = wrong_ans_input.cpu()
+    sample_ans_input = sample_ans_input.cpu()
 
-    fake_len = fake_len.cuda()
-    noise_input = noise_input.cuda()
-    batch_sample_idx = batch_sample_idx.cuda()
-    fake_diff_mask = fake_diff_mask.cuda()
-    opt_ans_input = opt_ans_input.cuda()
-    gt_index = gt_index.cuda()
+    fake_len = fake_len.cpu()
+    noise_input = noise_input.cpu()
+    batch_sample_idx = batch_sample_idx.cpu()
+    fake_diff_mask = fake_diff_mask.cpu()
+    opt_ans_input = opt_ans_input.cpu()
+    gt_index = gt_index.cpu()
 
 ques_input = Variable(ques_input)
 img_input = Variable(img_input)

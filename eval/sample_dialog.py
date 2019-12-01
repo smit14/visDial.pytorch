@@ -163,11 +163,11 @@ else:
     netG.load_state_dict(checkpoint['netG'])
 
 if opt.cuda:  # ship to cuda, if has GPU
-    netW_g.cuda()
-    netE_g.cuda()
-    netG.cuda()
-    critG.cuda()
-    sampler.cuda(), critLM.cuda()
+    netW_g.cpu()
+    netE_g.cpu()
+    netG.cpu()
+    critG.cpu()
+    sampler.cpu(), critLM.cpu()
 
 
 ####################################################################################
@@ -214,16 +214,16 @@ def val():
             gt_id = answer_ids[:, rnd]
             opt_len = opt_answerLen[:, rnd, :].clone().view(-1)
 
-            ques_input = torch.LongTensor(ques.size()).cuda()
+            ques_input = torch.LongTensor(ques.size()).cpu()
             ques_input.copy_(ques)
 
-            his_input = torch.LongTensor(his.size()).cuda()
+            his_input = torch.LongTensor(his.size()).cpu()
             his_input.copy_(his)
 
-            opt_ans_input = torch.LongTensor(opt_ans.size()).cuda()
+            opt_ans_input = torch.LongTensor(opt_ans.size()).cpu()
             opt_ans_input.copy_(opt_ans)
 
-            opt_ans_target = torch.LongTensor(opt_tans.size()).cuda()
+            opt_ans_target = torch.LongTensor(opt_tans.size()).cpu()
             opt_ans_target.copy_(opt_tans)
 
             gt_index = torch.LongTensor(gt_id.size())
@@ -244,7 +244,7 @@ def val():
             _, ques_hidden1 = netG(featG.view(1, -1, opt.ninp), ques_hidden1)
             # _, ques_hidden = netG(encoder_feat.view(1,-1,opt.ninp), ques_hidden)
             # extend the hidden
-            sample_ans_input = torch.LongTensor(1, opt.batchSize).cuda()
+            sample_ans_input = torch.LongTensor(1, opt.batchSize).cpu()
             sample_ans_input.resize_((1, batch_size)).fill_(vocab_size)
 
             sample_opt = {'beam_size': 1}
@@ -324,20 +324,20 @@ gt_index = torch.LongTensor(opt.batchSize)
 opt_ans_target = torch.LongTensor(opt.batchSize)
 
 if opt.cuda:
-    ques_input, his_input, img_input = ques_input.cuda(), his_input.cuda(), img_input.cuda()
-    ans_input, ans_target = ans_input.cuda(), ans_target.cuda()
-    wrong_ans_input = wrong_ans_input.cuda()
-    sample_ans_input = sample_ans_input.cuda()
+    ques_input, his_input, img_input = ques_input.cpu(), his_input.cpu(), img_input.cpu()
+    ans_input, ans_target = ans_input.cpu(), ans_target.cpu()
+    wrong_ans_input = wrong_ans_input.cpu()
+    sample_ans_input = sample_ans_input.cpu()
 
-    fake_len = fake_len.cuda()
-    noise_input = noise_input.cuda()
-    batch_sample_idx = batch_sample_idx.cuda()
-    fake_diff_mask = fake_diff_mask.cuda()
-    fake_mask = fake_mask.cuda()
+    fake_len = fake_len.cpu()
+    noise_input = noise_input.cpu()
+    batch_sample_idx = batch_sample_idx.cpu()
+    fake_diff_mask = fake_diff_mask.cpu()
+    fake_mask = fake_mask.cpu()
 
-    opt_ans_input = opt_ans_input.cuda()
-    gt_index = gt_index.cuda()
-    opt_ans_target = opt_ans_target.cuda()
+    opt_ans_input = opt_ans_input.cpu()
+    gt_index = gt_index.cpu()
+    opt_ans_target = opt_ans_target.cpu()
 
 ques_input = Variable(ques_input)
 img_input = Variable(img_input)
