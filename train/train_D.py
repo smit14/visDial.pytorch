@@ -97,9 +97,9 @@ from misc.encoder_QIH import _netE
 from script.test_data import check_data
 
 # ---------------------- check for data correctnes -------------------------------------
-if check_data() == False:
-    print("data is not up-to-date")
-    exit(255)
+# if check_data() == False:
+#     print("data is not up-to-date")
+#     exit(255)
 
 # ---------------------- ---------------------------------------------------------------
 
