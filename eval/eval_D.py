@@ -20,6 +20,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
+from getch import pause
 
 # from misc.utils import repackage_hidden_new, clip_gradient, adjust_learning_rate, decode_txt
 # import misc.dataLoader as dl
@@ -39,6 +40,7 @@ parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--log_iter', type=int, default=1)
 parser.add_argument('--path_to_home',type=str)
 parser.add_argument('--early_stop', type=int, default='1000000', help='datapoints to consider')
+parser.add_argument('--topn', type=int, default=10, help='number of top options to be dumped in json')
 
 opt = parser.parse_args()
 sys.path.insert(1, opt.path_to_home)
@@ -48,7 +50,8 @@ pth = os.path.split(opt.model_path)
 tail = pth[1]
 tail2 = tail[:-4]
 json_path = tail2+'.json'
-print('output will be dumped to: '+ json_path )
+json_path = os.path.join(pth[0], json_path)
+print('output will be dumped to: '+ json_path)
 
 if(opt.model_path==''):
     print('Model path required for evaluation')
@@ -89,9 +92,10 @@ input_ques_h5 = opt.input_ques_h5
 input_json = opt.input_json
 prev_log_iter = opt.log_iter
 early_stop = opt.early_stop
+topn = opt.topn
 opt = checkpoint['opt']
 opt.start_epoch = checkpoint['epoch']
-opt.batchSize = 5
+opt.batchSize = 128
 opt.data_dir = data_dir
 opt.model_path = model_path
 opt.input_img_h5 = input_img_h5
@@ -99,7 +103,7 @@ opt.input_ques_h5 = input_ques_h5
 opt.input_json = input_json
 opt.log_iter = prev_log_iter
 opt.early_stop = early_stop
-
+opt.topn = topn
 logger = get_eval_logger(os.path.splitext(os.path.basename(__file__))[0], opt.model_path)
 
 input_img_h5 = os.path.join(opt.data_dir, opt.input_img_h5)
@@ -231,19 +235,19 @@ def eval():
             sort_score, sort_idx = torch.sort(score, 1, descending=True)
 
             opt_answer_cur_ques = opt_answerT.detach().numpy()[:, rnd, :, :] #5, 100, 9
-            top_10_sort_idx = sort_idx.cpu().detach().numpy()[:, 0:10]
-            first_dim_indices = np.broadcast_to(np.arange(batch_size).reshape(batch_size,1),(batch_size,10)).reshape(batch_size*10)
-            top_10_ans_word_indices = opt_answer_cur_ques[first_dim_indices, top_10_sort_idx.reshape(batch_size*10), :].reshape(batch_size, 10, 9)
-            top_10_ans_txt_rank_wise = [] #10, 5 as strings
+            top_sort_idx = sort_idx.cpu().detach().numpy()[:, 0:opt.topn]
+            first_dim_indices = np.broadcast_to(np.arange(batch_size).reshape(batch_size,1),(batch_size,opt.topn)).reshape(batch_size*opt.topn)
+            top_ans_word_indices = opt_answer_cur_ques[first_dim_indices, top_sort_idx.reshape(batch_size*opt.topn), :].reshape(batch_size, opt.topn, 9)
+            top_ans_txt_rank_wise = [] #10, 5 as strings
 
             ques_txt = decode_txt(itow, questionL[:, rnd, :].t())
             ans_txt = decode_txt(itow, tans)
 
-            for pos in range(10):
-                top_10_temp = decode_txt(itow, torch.tensor(top_10_ans_word_indices[:, pos, :]).t())
-                top_10_ans_txt_rank_wise.append(top_10_temp)
+            for pos in range(opt.topn):
+                top_temp = decode_txt(itow, torch.tensor(top_ans_word_indices[:, pos, :]).t())
+                top_ans_txt_rank_wise.append(top_temp)
 
-            top_10_ans_txt = np.array(top_10_ans_txt_rank_wise, dtype=str).T
+            top_ans_txt = np.array(top_ans_txt_rank_wise, dtype=str).T
 
             count = sort_score.gt(gt_score.view(-1,1).expand_as(sort_score))
             rank = count.sum(1) + 1
@@ -253,9 +257,9 @@ def eval():
             sort_score_cpu = sort_score.data.cpu().numpy()
 
             for b in range(batch_size):
-                save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_10_ans_txt.tolist()[b],
+                save_tmp[b].append({"ques": ques_txt[b], "gt_ans": ans_txt[b], "top_10_disc_ans": top_ans_txt.tolist()[b],
                                     "gt_ans_rank": str(gt_rank_cpu[b]), "rnd": rnd, "img_id": img_id[b].item(),
-                                    "top_10_scores": sort_score_cpu[b][:10].tolist()})
+                                    "top_10_scores": sort_score_cpu[b][:opt.topn].tolist()})
 
         i += 1
 
