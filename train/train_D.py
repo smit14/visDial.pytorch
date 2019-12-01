@@ -254,7 +254,7 @@ def train(epoch):
             wrong_ans_input = torch.LongTensor(wrong_ans.size()).cuda()
             wrong_ans_input.copy_(wrong_ans)
 
-            opt_selected_probs_for_rnd_input = torch.LongTensor(opt_selected_probs_for_rnd.size()).cuda()
+            opt_selected_probs_for_rnd_input = torch.FloatTensor(opt_selected_probs_for_rnd.size()).cuda()
             opt_selected_probs_for_rnd_input.copy_(opt_selected_probs_for_rnd)
 
             # # sample in-batch negative index
